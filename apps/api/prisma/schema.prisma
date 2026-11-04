@@ -308,7 +308,8 @@ model Movimiento {
   // Instantánea de datos al momento del evento (trazabilidad aunque luego cambien).
   snapshot Json?
 
-  creadoEn DateTime @default(now())
+  creadoEn     DateTime @default(now())
+  sincronizado Boolean  @default(false) // false en el edge hasta subirlo a la nube
 
   puntoAcceso PuntoAcceso  @relation(fields: [puntoAccesoId], references: [id])
   dispositivo Dispositivo? @relation(fields: [dispositivoId], references: [id])
@@ -319,6 +320,7 @@ model Movimiento {
   @@index([puntoAccesoId])
   @@index([resultado])
   @@index([creadoEn])
+  @@index([sincronizado])
 }
 
 // ───────────────────────────  AUDITORÍA  ────────────────────────────
