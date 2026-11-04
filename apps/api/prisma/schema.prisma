@@ -1,0 +1,342 @@
+// ════════════════════════════════════════════════════════════════════
+//  Control de Accesos ThinkTech — Modelo de datos
+//  PostgreSQL + Prisma. Todas las consultas van parametrizadas por
+//  Prisma (sin SQL crudo) para evitar inyección SQL.
+// ════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────  ENUMS  ──────────────────────────────
+
+/// Los 4 perfiles del sistema.
+enum Rol {
+  SUPER_ADMIN // ThinkTech (proveedor del servicio). Acceso global, todos los parques.
+  ADMIN_PARQUE // Admin general de la empresa dueña del parque. Gestiona su parque.
+  ADMIN_BODEGA // Admin de una bodega/nave. Altas/bajas de SU personal y sus QR.
+  VIGILANCIA // Caseta. Vista de entradas/salidas, registro de visitas, apertura manual.
+}
+
+enum TipoPersona {
+  EMPLEADO // Personal permanente de una bodega.
+  VISITANTE
+  PROVEEDOR
+  TRANSPORTISTA
+  EVENTUAL
+}
+
+enum TipoCredencial {
+  PEATONAL
+  VEHICULAR
+}
+
+enum EstadoCredencial {
+  ACTIVA
+  BLOQUEADA // Suspensión temporal (reversible).
+  REVOCADA // Baja definitiva.
+  VENCIDA // Fuera de vigencia (derivado, pero se persiste para trazabilidad).
+}
+
+/// Núcleo del anti-passback: dónde está la credencial ahora.
+enum EstadoPresencia {
+  AFUERA
+  ADENTRO
+}
+
+enum SentidoAcceso {
+  ENTRADA
+  SALIDA
+}
+
+enum TipoPuntoAcceso {
+  ENTRADA_VEHICULAR
+  SALIDA_VEHICULAR
+  ENTRADA_PEATONAL
+  SALIDA_PEATONAL
+}
+
+enum ResultadoAcceso {
+  AUTORIZADO
+  RECHAZADO
+}
+
+enum MotivoRechazo {
+  QR_NO_RECONOCIDO
+  FIRMA_INVALIDA // QR manipulado / firma HMAC no coincide.
+  CREDENCIAL_BLOQUEADA
+  CREDENCIAL_REVOCADA
+  FUERA_DE_VIGENCIA
+  TIPO_INCORRECTO // QR peatonal en punto vehicular o viceversa.
+  NO_AUTORIZADO_PUNTO
+  REINGRESO_NO_PERMITIDO // Anti-passback: ya estaba ADENTRO.
+  DISPOSITIVO_NO_AUTORIZADO
+}
+
+enum TipoApertura {
+  AUTOMATICA // Validada por el sistema.
+  MANUAL // Abierta por un operador de caseta (queda registrado motivo + usuario).
+}
+
+enum EstadoDispositivo {
+  OPERATIVO
+  DESCONECTADO
+  FUERA_DE_SERVICIO
+}
+
+// ──────────────────────────  TENANT / SITIO  ────────────────────────
+
+model Parque {
+  id        String   @id @default(cuid())
+  nombre    String
+  direccion String?
+  timezone  String   @default("America/Mexico_City")
+  activo    Boolean  @default(true)
+  creadoEn  DateTime @default(now())
+  editadoEn DateTime @updatedAt
+
+  bodegas       Bodega[]
+  usuarios      Usuario[]
+  puntosAcceso  PuntoAcceso[]
+}
+
+/// Bodega / nave / empresa ocupante dentro de un parque.
+model Bodega {
+  id        String   @id @default(cuid())
+  parqueId  String
+  nombre    String // Nombre de la empresa ocupante.
+  nave      String? // Identificador de nave (ej. "NAVE B-12").
+  activo    Boolean  @default(true)
+  creadoEn  DateTime @default(now())
+  editadoEn DateTime @updatedAt
+
+  parque   Parque    @relation(fields: [parqueId], references: [id])
+  usuarios Usuario[]
+  personas Persona[]
+
+  @@index([parqueId])
+}
+
+// ───────────────────────────  USUARIOS  ─────────────────────────────
+
+model Usuario {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String // Argon2id. NUNCA texto plano.
+  nombre       String
+  rol          Rol
+  activo       Boolean  @default(true)
+
+  // Ámbito (scoping) según rol. SUPER_ADMIN no tiene ninguno (acceso global).
+  parqueId String? // ADMIN_PARQUE / VIGILANCIA
+  bodegaId String? // ADMIN_BODEGA
+
+  // MFA (TOTP) — obligatorio para roles administrativos.
+  mfaHabilitado Boolean @default(false)
+  mfaSecret     String? // Cifrado en reposo a nivel de aplicación.
+
+  // Protección contra fuerza bruta.
+  intentosFallidos Int       @default(0)
+  bloqueadoHasta   DateTime?
+  ultimoAcceso     DateTime?
+
+  creadoEn  DateTime @default(now())
+  editadoEn DateTime @updatedAt
+
+  parque Parque? @relation(fields: [parqueId], references: [id])
+  bodega Bodega? @relation(fields: [bodegaId], references: [id])
+
+  sesiones             Sesion[]
+  credencialesEmitidas Credencial[] @relation("CredencialEmisor")
+  movimientosManuales  Movimiento[] @relation("OperadorMovimiento")
+  acciones             AuditLog[]
+
+  @@index([parqueId])
+  @@index([bodegaId])
+}
+
+/// Sesiones / refresh tokens (se guarda solo el hash del token).
+model Sesion {
+  id           String   @id @default(cuid())
+  usuarioId    String
+  refreshHash  String // Hash del refresh token.
+  userAgent    String?
+  ip           String?
+  expiraEn     DateTime
+  revocadaEn   DateTime?
+  creadoEn     DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@index([usuarioId])
+}
+
+// ──────────────────────  PERSONAS Y VEHÍCULOS  ──────────────────────
+
+model Persona {
+  id        String      @id @default(cuid())
+  bodegaId  String // Bodega a la que pertenece (empleado) o que visita.
+  tipo      TipoPersona @default(EMPLEADO)
+  nombre    String
+  apellidos String?
+  documento String? // Identificación (opcional).
+  telefono  String?
+  email     String?
+  activo    Boolean     @default(true)
+  creadoEn  DateTime    @default(now())
+  editadoEn DateTime    @updatedAt
+
+  bodega       Bodega       @relation(fields: [bodegaId], references: [id])
+  vehiculos    Vehiculo[]
+  credenciales Credencial[]
+
+  @@index([bodegaId])
+}
+
+model Vehiculo {
+  id        String   @id @default(cuid())
+  personaId String?
+  placas    String
+  marca     String?
+  modelo    String?
+  color     String?
+  activo    Boolean  @default(true)
+  creadoEn  DateTime @default(now())
+  editadoEn DateTime @updatedAt
+
+  persona      Persona?     @relation(fields: [personaId], references: [id])
+  credenciales Credencial[]
+
+  @@index([personaId])
+  @@index([placas])
+}
+
+// ─────────────────────────  CREDENCIAL (QR)  ────────────────────────
+
+/// Una persona puede tener varias credenciales (ej. 1 peatonal + 1 vehicular).
+/// El QR impreso/en pantalla codifica un token firmado (HMAC). La validez real
+/// SIEMPRE se resuelve contra esta tabla en el servidor.
+model Credencial {
+  id     String         @id @default(cuid())
+  codigo String         @unique // Identificador público embebido en el QR (opaco).
+  tipo   TipoCredencial
+
+  estado          EstadoCredencial @default(ACTIVA)
+  estadoPresencia EstadoPresencia  @default(AFUERA) // ← anti-passback
+
+  vigenciaDesde DateTime  @default(now())
+  vigenciaHasta DateTime? // null = sin vencimiento (empleado permanente).
+
+  personaId  String
+  vehiculoId String? // Solo para credenciales VEHICULAR.
+
+  emisorId         String // Usuario que la generó.
+  ultimaEntradaEn  DateTime? // Base para el reset de 24 h.
+  bloqueoMotivo    String?
+
+  creadoEn  DateTime @default(now())
+  editadoEn DateTime @updatedAt
+
+  persona     Persona      @relation(fields: [personaId], references: [id])
+  vehiculo    Vehiculo?    @relation(fields: [vehiculoId], references: [id])
+  emisor      Usuario      @relation("CredencialEmisor", fields: [emisorId], references: [id])
+  movimientos Movimiento[]
+
+  @@index([personaId])
+  @@index([estado])
+  @@index([estadoPresencia])
+}
+
+// ───────────────────  PUNTOS DE ACCESO / LECTORES  ──────────────────
+
+model PuntoAcceso {
+  id       String          @id @default(cuid())
+  parqueId String
+  tipo     TipoPuntoAcceso
+  nombre   String
+  activo   Boolean         @default(true)
+  creadoEn DateTime        @default(now())
+
+  parque       Parque        @relation(fields: [parqueId], references: [id])
+  dispositivos Dispositivo[]
+  movimientos  Movimiento[]
+
+  @@index([parqueId])
+}
+
+/// Lector/tótem. Se autentica con apiKeyHash al reportar lecturas.
+model Dispositivo {
+  id             String            @id @default(cuid())
+  puntoAccesoId  String
+  nombre         String
+  apiKeyHash     String // Hash de la API key del dispositivo.
+  estado         EstadoDispositivo @default(OPERATIVO)
+  ultimoLatido   DateTime?
+  creadoEn       DateTime          @default(now())
+  editadoEn      DateTime          @updatedAt
+
+  puntoAcceso PuntoAcceso  @relation(fields: [puntoAccesoId], references: [id])
+  movimientos Movimiento[]
+
+  @@index([puntoAccesoId])
+}
+
+// ─────────────────────  MOVIMIENTOS (BITÁCORA)  ─────────────────────
+
+/// Cada lectura (autorizada o rechazada) genera un movimiento inmutable.
+model Movimiento {
+  id            String          @id @default(cuid())
+  puntoAccesoId String
+  dispositivoId String?
+  credencialId  String? // null si el QR no se reconoció.
+
+  sentido       SentidoAcceso
+  resultado     ResultadoAcceso
+  motivoRechazo MotivoRechazo?
+  tipoApertura  TipoApertura    @default(AUTOMATICA)
+
+  operadorId   String? // Usuario de caseta si fue apertura MANUAL.
+  motivoManual String? // Justificación de la apertura manual.
+
+  qrLeido String? // Carga cruda del QR (útil para rechazos QR_NO_RECONOCIDO).
+
+  // Instantánea de datos al momento del evento (trazabilidad aunque luego cambien).
+  snapshot Json?
+
+  creadoEn DateTime @default(now())
+
+  puntoAcceso PuntoAcceso  @relation(fields: [puntoAccesoId], references: [id])
+  dispositivo Dispositivo? @relation(fields: [dispositivoId], references: [id])
+  credencial  Credencial?  @relation(fields: [credencialId], references: [id])
+  operador    Usuario?     @relation("OperadorMovimiento", fields: [operadorId], references: [id])
+
+  @@index([credencialId])
+  @@index([puntoAccesoId])
+  @@index([resultado])
+  @@index([creadoEn])
+}
+
+// ───────────────────────────  AUDITORÍA  ────────────────────────────
+
+/// Registro de acciones administrativas (SGSI: trazabilidad / no repudio).
+model AuditLog {
+  id        String   @id @default(cuid())
+  usuarioId String?
+  accion    String // ej. "USUARIO_CREADO", "CREDENCIAL_BLOQUEADA".
+  entidad   String? // ej. "Persona", "Credencial".
+  entidadId String?
+  detalle   Json?
+  ip        String?
+  userAgent String?
+  creadoEn  DateTime @default(now())
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id])
+
+  @@index([usuarioId])
+  @@index([creadoEn])
+}
