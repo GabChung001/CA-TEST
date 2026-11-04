@@ -6,6 +6,7 @@ const NAV: { to: string; label: string; roles: Rol[] }[] = [
   { to: '/personal', label: 'Personal', roles: ['SUPER_ADMIN', 'ADMIN_PARQUE', 'ADMIN_BODEGA'] },
   { to: '/bodegas', label: 'Bodegas', roles: ['SUPER_ADMIN', 'ADMIN_PARQUE'] },
   { to: '/usuarios', label: 'Usuarios', roles: ['SUPER_ADMIN', 'ADMIN_PARQUE'] },
+  { to: '/lector', label: 'Lector (cámara)', roles: ['SUPER_ADMIN', 'ADMIN_PARQUE', 'VIGILANCIA'] },
   { to: '/historial', label: 'Historial de accesos', roles: ['SUPER_ADMIN', 'ADMIN_PARQUE', 'VIGILANCIA', 'ADMIN_BODEGA'] },
   { to: '/configuracion', label: 'Configuración', roles: ['SUPER_ADMIN', 'ADMIN_PARQUE', 'ADMIN_BODEGA', 'VIGILANCIA'] },
 ];
