@@ -204,6 +204,23 @@ Crea parque y puntos en **Configuración**, bodegas, personal + **QR**, y prueba
 
 ---
 
+## IP pública: fijarla o actualizarla
+
+Al **detener/reiniciar** la instancia, AWS le asigna una **IP pública nueva**. Dos opciones:
+
+**A. Fijarla con una Elastic IP (recomendado):**
+1. EC2 → **Elastic IPs** → **Allocate Elastic IP address** → Allocate.
+2. Selecciónala → **Actions → Associate** → elige tu instancia → Associate.
+3. Esa IP ya **no cambia** aunque reinicies. (Una Elastic IP *sin asociar* se cobra; asociada a una instancia encendida no.)
+
+**B. Si no usas Elastic IP:** cada vez que cambie la IP de AWS, actualiza el `CLOUD_URL` de la **controladora/edge** y reinicia su servicio:
+```bash
+cd ~/Control-de-Accesos
+sed -i -E "s|^CLOUD_URL=.*|CLOUD_URL=http://NUEVA-IP/api|" apps/api/.env
+sudo systemctl restart acceso-api
+```
+> La **web servida desde AWS no necesita cambios** al cambiar la IP (usa rutas relativas `/api`); solo el `CLOUD_URL` del edge apunta por IP.
+
 ## Actualizar a una versión nueva
 
 Vuelve a empaquetar y subir desde tu PC, luego reconstruir en el servidor.

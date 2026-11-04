@@ -146,5 +146,10 @@ controladora (entra a su panel local o valida el QR).
 - Si se cae internet, la controladora **sigue validando** con su copia local;
   los movimientos se **encolan** y suben solos al reconectar.
 - La presencia (anti-passback) y el reset de 24 h **viven en la controladora**.
+- Si **cambia la IP de la nube** (instancia sin Elastic IP), actualiza el `CLOUD_URL`:
+  ```bash
+  sed -i -E "s|^CLOUD_URL=.*|CLOUD_URL=http://NUEVA-IP/api|" apps/api/.env
+  sudo systemctl restart acceso-api
+  ```
 - Actualizar versión: vuelve a subir el zip (paso 2) y repite el paso 4 +
   `sudo systemctl restart acceso-api`.
