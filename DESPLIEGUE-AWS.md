@@ -80,26 +80,25 @@ sudo -u postgres createdb control_accesos
 
 ---
 
-## Fase D — Subir el código (GitHub)
+## Fase D — Subir el código (zip por scp, sin GitHub)
 
-En **tu equipo de desarrollo** (una sola vez):
+`git archive` empaqueta **solo lo versionado** (sin `node_modules` ni los `.env`),
+así que el zip queda limpio y ligero.
 
-1. Crea un repositorio **privado** vacío en GitHub (ej. `control-accesos`).
-2. Conéctalo y súbelo:
-   ```bash
-   git remote add origin https://github.com/TU-USUARIO-GITHUB/control-accesos.git
-   git push -u origin main
-   ```
+En **tu equipo de desarrollo** (PowerShell, dentro de la carpeta del proyecto):
+
+```powershell
+cd "C:\Users\User\OneDrive\Documentos\IntegraTECH\ThinkTech\Control de Accesos"
+git archive --format=zip -o "$env:USERPROFILE\Downloads\app.zip" main
+scp -i "C:\Users\User\Downloads\KEY.pem" "$env:USERPROFILE\Downloads\app.zip" ec2-user@TU-IP-PUBLICA:~/
+```
 
 En **el servidor**:
 
 ```bash
-cd ~
-git clone https://github.com/TU-USUARIO-GITHUB/control-accesos.git Control-de-Accesos
-cd Control-de-Accesos
+sudo dnf install -y unzip
+mkdir -p ~/Control-de-Accesos && cd ~/Control-de-Accesos && unzip -o ~/app.zip
 ```
-> Repo privado: GitHub pedirá usuario + **token** (Personal Access Token), no tu contraseña.
-> Alternativa sin GitHub: comprime la carpeta del proyecto (sin `node_modules`) y súbela con `scp`.
 
 ---
 
@@ -203,8 +202,18 @@ Crea parque y puntos en **Configuración**, bodegas, personal + **QR**, y prueba
 
 ## Actualizar a una versión nueva
 
+Vuelve a empaquetar y subir desde tu PC, luego reconstruir en el servidor.
+
+En **tu PC**:
+```powershell
+cd "C:\Users\User\OneDrive\Documentos\IntegraTECH\ThinkTech\Control de Accesos"
+git archive --format=zip -o "$env:USERPROFILE\Downloads\app.zip" main
+scp -i "C:\Users\User\Downloads\KEY.pem" "$env:USERPROFILE\Downloads\app.zip" ec2-user@TU-IP-PUBLICA:~/
+```
+
+En **el servidor**:
 ```bash
-cd ~/Control-de-Accesos && git pull
+cd ~/Control-de-Accesos && unzip -o ~/app.zip
 pnpm install
 pnpm --filter @acceso/shared build
 pnpm --filter @acceso/api exec prisma migrate deploy
