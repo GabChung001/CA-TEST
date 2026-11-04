@@ -107,24 +107,28 @@ mkdir -p ~/Control-de-Accesos && cd ~/Control-de-Accesos && unzip -o ~/app.zip
 ```bash
 cd ~/Control-de-Accesos
 
-# 1) .env de la API
-cp apps/api/.env.example apps/api/.env
-# Genera 3 secretos distintos y pégalos en apps/api/.env:
-for n in 1 2 3; do node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"; done
-nano apps/api/.env
-#   DATABASE_URL=postgresql://postgres@localhost:5432/control_accesos?schema=public
-#   JWT_ACCESS_SECRET / JWT_REFRESH_SECRET / QR_SIGNING_SECRET = (los 3 generados)
-#   WEB_ORIGIN=http://TU-IP-PUBLICA
-#   NO pongas NODE_ENV=production todavía (en HTTP la cookie debe ir sin 'Secure')
+# 1) .env de la API (genera 3 secretos distintos automáticamente)
+cat > apps/api/.env <<EOF
+DATABASE_URL=postgresql://postgres@localhost:5432/control_accesos?schema=public
+API_PORT=3001
+JWT_ACCESS_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))")
+JWT_REFRESH_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))")
+JWT_ACCESS_TTL=15m
+JWT_REFRESH_TTL=7d
+QR_SIGNING_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))")
+PRESENCIA_RESET_HORAS=24
+EOF
+# Nota: NO se pone NODE_ENV=production en HTTP (la cookie de sesión debe ir sin 'Secure').
 
 # 2) .env de la web: API en el mismo origen vía nginx
 echo 'VITE_API_URL=/api' > apps/web/.env
 
-# 3) Instalar, construir, migrar y sembrar
+# 3) Instalar, generar cliente Prisma, construir, migrar y sembrar
 pnpm install
 pnpm --filter @acceso/shared build
+pnpm --filter @acceso/api exec prisma generate        # IMPRESCINDIBLE antes de build/seed
 pnpm --filter @acceso/api exec prisma migrate deploy
-pnpm --filter @acceso/api run db:seed        # super admin inicial
+pnpm --filter @acceso/api run db:seed                 # super admin inicial
 pnpm --filter @acceso/api build
 pnpm --filter @acceso/web build
 
@@ -216,9 +220,11 @@ En **el servidor**:
 cd ~/Control-de-Accesos && unzip -o ~/app.zip
 pnpm install
 pnpm --filter @acceso/shared build
+pnpm --filter @acceso/api exec prisma generate
 pnpm --filter @acceso/api exec prisma migrate deploy
 pnpm --filter @acceso/api build && pnpm --filter @acceso/web build
 sudo cp -r apps/web/dist/* /usr/share/nginx/html/
+sudo systemctl restart acceso-api
 sudo systemctl restart acceso-api
 ```
 
