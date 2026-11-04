@@ -9,6 +9,7 @@ import Bodegas from './pages/Bodegas';
 import Usuarios from './pages/Usuarios';
 import Historial from './pages/Historial';
 import Configuracion from './pages/Configuracion';
+import Lector from './pages/Lector';
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="/bodegas" element={<Bodegas />} />
         <Route path="/usuarios" element={<Usuarios />} />
         <Route path="/historial" element={<Historial />} />
+        <Route path="/lector" element={<Lector />} />
         <Route path="/configuracion" element={<Configuracion />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
