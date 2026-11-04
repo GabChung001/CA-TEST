@@ -1,0 +1,18 @@
+# PostgreSQL para desarrollo local y para el servidor de caseta.
+# Levantar con:  pnpm db:up   (o)  docker compose up -d db
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: acceso_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-acceso}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cambia_esta_contrasena}
+      POSTGRES_DB: ${POSTGRES_DB:-control_accesos}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:

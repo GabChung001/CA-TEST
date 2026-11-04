@@ -1,0 +1,35 @@
+# Dependencias
+node_modules/
+.pnpm-store/
+
+# Build
+dist/
+build/
+.next/
+*.tsbuildinfo
+
+# Entorno / secretos  (NUNCA versionar)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Prisma
+apps/api/prisma/*.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Editores / SO
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Respaldos / datos locales
+backups/
+data/
