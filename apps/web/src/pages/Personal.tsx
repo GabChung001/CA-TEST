@@ -85,6 +85,17 @@ export default function Personal() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [detalle, setDetalle] = useState<Persona | null>(null);
+  const [verBaja, setVerBaja] = useState(false);
+
+  const darBaja = async (p: Persona) => {
+    if (!window.confirm(`¿Dar de baja a ${p.nombre} ${p.apellidos ?? ''}? Se revocarán sus credenciales/QR.`)) return;
+    try {
+      await api.post(`/personas/${p.id}/baja`);
+      personas.reload();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Error');
+    }
+  };
 
   const crear = async (e: FormEvent) => {
     e.preventDefault();
@@ -161,16 +172,22 @@ export default function Personal() {
 
       {(!esSuper || parqueSel) && (
         <Card className="p-5">
-          {!esBodega && (
-            <div className="mb-4 w-64">
-              <Field label="Filtrar por bodega">
-                <Select value={bodegaFiltro} onChange={(e) => setBodegaFiltro(e.target.value)}>
-                  <option value="">Todas</option>
-                  {(bodegas.data ?? []).map((b) => (<option key={b.id} value={b.id}>{b.nombre}</option>))}
-                </Select>
-              </Field>
-            </div>
-          )}
+          <div className="mb-4 flex flex-wrap items-end gap-4">
+            {!esBodega && (
+              <div className="w-64">
+                <Field label="Filtrar por bodega">
+                  <Select value={bodegaFiltro} onChange={(e) => setBodegaFiltro(e.target.value)}>
+                    <option value="">Todas</option>
+                    {(bodegas.data ?? []).map((b) => (<option key={b.id} value={b.id}>{b.nombre}</option>))}
+                  </Select>
+                </Field>
+              </div>
+            )}
+            <label className="flex items-center gap-2 pb-2 text-sm text-slate-600">
+              <input type="checkbox" checked={verBaja} onChange={(e) => setVerBaja(e.target.checked)} />
+              Mostrar dados de baja
+            </label>
+          </div>
           {personas.loading ? (
             <Spinner />
           ) : (
@@ -185,19 +202,22 @@ export default function Personal() {
                 </tr>
               </thead>
               <tbody>
-                {(personas.data ?? []).map((p) => (
+                {(personas.data ?? []).filter((p) => verBaja || p.activo).map((p) => (
                   <tr key={p.id} className="border-b border-slate-100">
                     <td className="py-2 font-medium text-slate-800">{p.nombre} {p.apellidos ?? ''}</td>
                     <td>{p.tipo}</td>
                     <td>{p.credenciales?.length ?? 0}</td>
                     <td>{p.activo ? <Badge color="green">Activo</Badge> : <Badge color="slate">Baja</Badge>}</td>
-                    <td>
+                    <td className="space-x-3 whitespace-nowrap">
                       <button className="text-xs text-teal-700 hover:underline" onClick={() => setDetalle(p)}>Ver / QR</button>
+                      {p.activo && (
+                        <button className="text-xs text-red-600 hover:underline" onClick={() => darBaja(p)}>Baja</button>
+                      )}
                     </td>
                   </tr>
                 ))}
-                {personas.data?.length === 0 && (
-                  <tr><td colSpan={5} className="py-4 text-slate-500">Sin personal registrado.</td></tr>
+                {(personas.data ?? []).filter((p) => verBaja || p.activo).length === 0 && (
+                  <tr><td colSpan={5} className="py-4 text-slate-500">Sin personal.</td></tr>
                 )}
               </tbody>
             </table>
