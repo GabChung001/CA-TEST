@@ -20,6 +20,12 @@ const schema = z.object({
   PRESENCIA_RESET_HORAS: z.coerce.number().int().positive().default(24),
 
   WEB_ORIGIN: z.string().url().default('http://localhost:5173'),
+
+  // Sincronización nube <-> edge (caseta)
+  SYNC_ROLE: z.enum(['cloud', 'edge']).default('cloud'),
+  CLOUD_URL: z.string().url().optional(), // solo edge: URL base de la API en la nube (…/api)
+  EDGE_SYNC_KEY: z.string().optional(), // secreto compartido entre nube y edge
+  SYNC_INTERVAL_SEG: z.coerce.number().int().positive().default(60),
 });
 
 export type Env = z.infer<typeof schema>;

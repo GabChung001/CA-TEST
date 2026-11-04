@@ -15,6 +15,7 @@ import { CredencialesModule } from './credenciales/credenciales.module';
 import { PuntosModule } from './puntos/puntos.module';
 import { AccesoModule } from './acceso/acceso.module';
 import { MovimientosModule } from './movimientos/movimientos.module';
+import { SyncModule } from './sync/sync.module';
 import { HealthController } from './health/health.controller';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -36,6 +37,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     PuntosModule,
     AccesoModule,
     MovimientosModule,
+    SyncModule,
   ],
   controllers: [HealthController],
   providers: [
