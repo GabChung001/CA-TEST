@@ -221,29 +221,24 @@ sudo systemctl restart acceso-api
 ```
 > La **web servida desde AWS no necesita cambios** al cambiar la IP (usa rutas relativas `/api`); solo el `CLOUD_URL` del edge apunta por IP.
 
-## Actualizar a una versión nueva
+## Actualizar a una versión nueva (desde GitHub)
 
-Vuelve a empaquetar y subir desde tu PC, luego reconstruir en el servidor.
-
-En **tu PC**:
-```powershell
-cd "C:\Users\User\OneDrive\Documentos\IntegraTECH\ThinkTech\Control de Accesos"
-git archive --format=zip -o "$env:USERPROFILE\Downloads\app.zip" main
-scp -i "C:\Users\User\Downloads\KEY.pem" "$env:USERPROFILE\Downloads\app.zip" ec2-user@TU-IP-PUBLICA:~/
-```
-
-En **el servidor**:
+**Configuración única** (repo privado → autenticar con un PAT de GitHub):
 ```bash
-cd ~/Control-de-Accesos && unzip -o ~/app.zip
-pnpm install
-pnpm --filter @acceso/shared build
-pnpm --filter @acceso/api exec prisma generate
-pnpm --filter @acceso/api exec prisma migrate deploy
-pnpm --filter @acceso/api build && pnpm --filter @acceso/web build
-sudo cp -r apps/web/dist/* /usr/share/nginx/html/
-sudo systemctl restart acceso-api
-sudo systemctl restart acceso-api
+cd ~/Control-de-Accesos
+git remote set-url origin https://TU_PAT@github.com/GabChung001/CA-TEST.git
 ```
+> El PAT se crea en GitHub → *Settings → Developer settings → Personal access tokens*
+> (classic con permiso `repo`, o fine-grained con *Contents: Read* sobre el repo).
+> Queda guardado en `.git/config` del servidor (texto plano, en tu propia máquina).
+
+Después, **cada actualización es un comando**:
+```bash
+cd ~/Control-de-Accesos && bash scripts/deploy.sh
+```
+`scripts/deploy.sh` hace: `git fetch` + `reset --hard origin/main` + `clean` +
+`pnpm install` + Prisma (generate / migrate deploy) + build de API y web +
+publicar la web + reiniciar la API. Tu `.env` **no se toca** (está en `.gitignore`).
 
 ---
 
