@@ -36,25 +36,41 @@ Este equipo arranca desde cero. Hace falta instalar:
 
 Ver la guía de instalación en [`SETUP-DEV.md`](./SETUP-DEV.md).
 
-## Puesta en marcha (una vez instalado el toolchain)
+## Puesta en marcha del MVP local
+
+> En Windows con Scoop, si un shell nuevo no encuentra `node`/`pnpm`/`psql`,
+> recarga el PATH:
+> `$env:PATH = [Environment]::GetEnvironmentVariable('PATH','User') + ';' + [Environment]::GetEnvironmentVariable('PATH','Machine')`
 
 ```bash
-# 1) Variables de entorno
-copy .env.example .env   # y editar los secretos
-
-# 2) Dependencias
+# 1) Dependencias
 pnpm install
 
-# 3) Base de datos local
-pnpm db:up
+# 2) Base de datos (PostgreSQL de Scoop)  — o 'pnpm db:up' si usas Docker
+pg_ctl start -D $env:PGDATA
 
-# 4) Migraciones y cliente Prisma  (cuando la API esté generada)
-pnpm --filter @acceso/api prisma migrate dev
+# 3) Variables de entorno de la API  (apps/api/.env; ya generado en este equipo)
+#    Copia apps/api/.env.example o usa el existente.
 
-# 5) Desarrollo
-pnpm api:dev     # API  (http://localhost:3001)
-pnpm web:dev     # Web  (http://localhost:5173)
+# 4) Paquete compartido + Prisma + datos iniciales
+pnpm --filter @acceso/shared build
+pnpm --filter @acceso/api exec prisma migrate dev
+pnpm --filter @acceso/api run db:seed    # super admin inicial
 ```
+
+Levantar (dos terminales):
+
+```bash
+pnpm --filter @acceso/api start:dev      # API  → http://localhost:3001/api
+```
+
+```bash
+pnpm --filter @acceso/web dev            # Web  → http://localhost:5173
+```
+
+Entra con el super admin sembrado (`felipe@thinktech.mx`). Desde ahí: crea el
+parque y sus puntos de acceso en **Configuración**, bodegas, personal y sus
+**QR**, y prueba el flujo en el **simulador de lector** del panel.
 
 ## Generar secretos seguros
 
