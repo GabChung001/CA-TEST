@@ -39,9 +39,9 @@ export class BodegasService {
     return bodega;
   }
 
-  listar(actor: AuthUser) {
+  listar(actor: AuthUser, parqueId?: string) {
     return this.prisma.bodega.findMany({
-      where: bodegaWhere(actor),
+      where: { ...bodegaWhere(actor), ...(parqueId ? { parqueId } : {}) },
       orderBy: { creadoEn: 'desc' },
     });
   }
