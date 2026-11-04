@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/types';
@@ -16,8 +16,8 @@ export class BodegasController {
   }
 
   @Get()
-  listar(@CurrentUser() u: AuthUser) {
-    return this.svc.listar(u);
+  listar(@CurrentUser() u: AuthUser, @Query('parqueId') parqueId?: string) {
+    return this.svc.listar(u, parqueId);
   }
 
   @Get(':id')

@@ -41,7 +41,6 @@ export default function Usuarios() {
   const esSuper = user?.rol === 'SUPER_ADMIN';
   const usuarios = useApi<Usuario[]>('/usuarios');
   const parques = useApi<Parque[]>(esSuper ? '/parques' : null);
-  const bodegas = useApi<Bodega[]>('/bodegas');
 
   const rolesDisponibles: Rol[] = esSuper
     ? ['ADMIN_PARQUE', 'ADMIN_BODEGA', 'VIGILANCIA', 'SUPER_ADMIN']
@@ -61,6 +60,12 @@ export default function Usuarios() {
 
   const necesitaParque = esSuper && (form.rol === 'ADMIN_PARQUE' || form.rol === 'VIGILANCIA');
   const necesitaBodega = form.rol === 'ADMIN_BODEGA';
+  const mostrarParque = necesitaParque || (esSuper && necesitaBodega);
+
+  // Bodegas filtradas por el parque elegido (super); para admin de parque, las suyas.
+  const bodegas = useApi<Bodega[]>(
+    esSuper ? (form.parqueId ? `/bodegas?parqueId=${form.parqueId}` : null) : '/bodegas',
+  );
 
   const crear = async (e: FormEvent) => {
     e.preventDefault();
@@ -114,9 +119,9 @@ export default function Usuarios() {
               ))}
             </Select>
           </Field>
-          {necesitaParque && (
+          {mostrarParque && (
             <Field label="Parque">
-              <Select value={form.parqueId} onChange={(e) => setForm({ ...form, parqueId: e.target.value })} required>
+              <Select value={form.parqueId} onChange={(e) => setForm({ ...form, parqueId: e.target.value, bodegaId: '' })} required>
                 <option value="">Selecciona…</option>
                 {(parques.data ?? []).map((p) => (
                   <option key={p.id} value={p.id}>
