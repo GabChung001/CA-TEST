@@ -35,3 +35,7 @@ desktop.ini
 # Respaldos / datos locales
 backups/
 data/
+
+# Notas locales (pueden contener secretos: tokens, etc.) — NO versionar
+Act_AWS.txt
+*.secrets.txt

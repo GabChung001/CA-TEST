@@ -1,5 +1,0 @@
-cd ~/Control-de-Accesos
-git remote set-url origin https://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@github.com/GabChung001/CA-TEST.git
-git fetch origin
-git reset --hard origin/main
-git clean -fd
