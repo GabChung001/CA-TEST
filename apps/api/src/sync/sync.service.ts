@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
+import { Prisma, Rol } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type { MovimientoWire } from './sync.types';
 
@@ -12,7 +12,10 @@ import type { MovimientoWire } from './sync.types';
 export class SyncService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async snapshot() {
+  async snapshot(parqueId?: string) {
+    // Si la controladora envía su PARQUE_ID, solo se le entrega el catálogo de
+    // ese parque (los accesos son por parque/bodega). Sin él, entrega todo.
+    const pq = parqueId;
     const [
       parques,
       bodegas,
@@ -23,14 +26,34 @@ export class SyncService {
       dispositivos,
       credenciales,
     ] = await this.prisma.$transaction([
-      this.prisma.parque.findMany(),
-      this.prisma.bodega.findMany(),
-      this.prisma.usuario.findMany(),
-      this.prisma.persona.findMany(),
-      this.prisma.vehiculo.findMany(),
-      this.prisma.puntoAcceso.findMany(),
-      this.prisma.dispositivo.findMany(),
-      this.prisma.credencial.findMany(),
+      this.prisma.parque.findMany(pq ? { where: { id: pq } } : undefined),
+      this.prisma.bodega.findMany(pq ? { where: { parqueId: pq } } : undefined),
+      this.prisma.usuario.findMany(
+        pq
+          ? {
+              where: {
+                OR: [
+                  { parqueId: pq },
+                  { bodega: { parqueId: pq } },
+                  { rol: Rol.SUPER_ADMIN },
+                ],
+              },
+            }
+          : undefined,
+      ),
+      this.prisma.persona.findMany(
+        pq ? { where: { bodega: { parqueId: pq } } } : undefined,
+      ),
+      this.prisma.vehiculo.findMany(
+        pq ? { where: { persona: { bodega: { parqueId: pq } } } } : undefined,
+      ),
+      this.prisma.puntoAcceso.findMany(pq ? { where: { parqueId: pq } } : undefined),
+      this.prisma.dispositivo.findMany(
+        pq ? { where: { puntoAcceso: { parqueId: pq } } } : undefined,
+      ),
+      this.prisma.credencial.findMany(
+        pq ? { where: { persona: { bodega: { parqueId: pq } } } } : undefined,
+      ),
     ]);
 
     return {

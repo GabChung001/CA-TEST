@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Query, UseGuards } from '@nestjs/common';
 import { Public } from '../common/decorators/public.decorator';
 import { SyncKeyGuard } from './sync-key.guard';
 import { SyncService } from './sync.service';
@@ -12,8 +12,8 @@ export class SyncController {
   constructor(private readonly svc: SyncService) {}
 
   @Get('catalogo')
-  catalogo() {
-    return this.svc.snapshot();
+  catalogo(@Query('parqueId') parqueId?: string) {
+    return this.svc.snapshot(parqueId);
   }
 
   @Post('movimientos')

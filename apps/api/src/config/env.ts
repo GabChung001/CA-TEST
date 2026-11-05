@@ -26,6 +26,7 @@ const schema = z.object({
   CLOUD_URL: z.string().url().optional(), // solo edge: URL base de la API en la nube (…/api)
   EDGE_SYNC_KEY: z.string().optional(), // secreto compartido entre nube y edge
   SYNC_INTERVAL_SEG: z.coerce.number().int().positive().default(60),
+  PARQUE_ID: z.string().optional(), // solo edge: el parque que atiende esta controladora
 });
 
 export type Env = z.infer<typeof schema>;
