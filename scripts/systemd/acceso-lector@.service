@@ -1,0 +1,19 @@
+[Unit]
+Description=Lector de QR (camara/totem) - instancia %i
+After=network-online.target acceso-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=dev
+WorkingDirectory=/home/dev/Control-de-Accesos
+# Cada instancia carga su propio archivo: ~/.lector-<instancia>.env
+# con KEY=<apiKey del dispositivo> y VIDEO_DEV=/dev/videoN
+Environment=ROL=%i
+EnvironmentFile=/home/dev/.lector-%i.env
+ExecStart=/usr/bin/env bash /home/dev/Control-de-Accesos/scripts/lector.sh
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

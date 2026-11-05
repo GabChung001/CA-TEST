@@ -76,7 +76,8 @@ export class SyncService {
       const base: Prisma.MovimientoCreateManyInput = {
         id: m.id,
         puntoAccesoId: m.puntoAccesoId,
-        dispositivoId: m.dispositivoId ?? null,
+        // Los dispositivos son locales de cada caseta; no se referencian en la nube.
+        dispositivoId: null,
         credencialId: m.credencialId ?? null,
         sentido: m.sentido as Prisma.MovimientoCreateManyInput['sentido'],
         resultado: m.resultado as Prisma.MovimientoCreateManyInput['resultado'],
