@@ -14,6 +14,8 @@ interface Dispositivo {
   id: string;
   nombre: string;
   estado: string;
+  ultimoLatido: string | null;
+  creadoEn: string;
 }
 interface Punto {
   id: string;
@@ -201,9 +203,22 @@ function PuntosCard({ esSuper }: { esSuper: boolean }) {
   };
 
   const crearDispositivo = async (puntoId: string) => {
-    const nombre = `Lector ${new Date().toISOString().slice(11, 16)}`;
+    const nombre = window.prompt('Nombre del dispositivo (p. ej. Cámara entrada, Tótem salida):');
+    if (!nombre) return;
     const r = await api.post<{ apiKey: string }>(`/puntos/${puntoId}/dispositivos`, { nombre });
     setNuevaKey(r.apiKey);
+    puntos.reload();
+  };
+
+  const regenerarLlave = async (devId: string) => {
+    if (!window.confirm('Se generará una llave NUEVA y la anterior dejará de funcionar. ¿Continuar?')) return;
+    const r = await api.post<{ apiKey: string }>(`/puntos/dispositivos/${devId}/regenerar`, {});
+    setNuevaKey(r.apiKey);
+    puntos.reload();
+  };
+
+  const cambiarEstado = async (devId: string, estado: string) => {
+    await api.patch(`/puntos/dispositivos/${devId}/estado`, { estado });
     puntos.reload();
   };
 
@@ -239,26 +254,112 @@ function PuntosCard({ esSuper }: { esSuper: boolean }) {
       {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
 
       {nuevaKey && (
-        <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs">
-          <div className="font-semibold text-amber-800">API key del dispositivo (se muestra una sola vez):</div>
-          <code className="break-all text-amber-900">{nuevaKey}</code>
+        <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="font-semibold text-amber-800">
+              API key del dispositivo — cópiala ahora, se muestra una sola vez:
+            </span>
+            <div className="flex gap-2">
+              <button
+                className="rounded bg-amber-200 px-2 py-0.5 text-amber-900 hover:bg-amber-300"
+                onClick={() => navigator.clipboard?.writeText(nuevaKey)}
+              >
+                Copiar
+              </button>
+              <button className="text-amber-700 hover:underline" onClick={() => setNuevaKey(null)}>
+                Ocultar
+              </button>
+            </div>
+          </div>
+          <code className="block break-all rounded bg-white/60 p-2 text-amber-900">{nuevaKey}</code>
+          <p className="mt-1 text-amber-700">
+            Pégala en la controladora: <code>designar-lector.sh &lt;nombre&gt; /dev/videoN {nuevaKey.split('.')[0]}…</code>
+          </p>
         </div>
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-4">
         {(puntos.data ?? []).map((p) => (
-          <div key={p.id} className="flex items-center justify-between border-b border-slate-100 py-2 text-sm">
-            <div>
-              <span className="font-medium text-slate-800">{p.nombre}</span>{' '}
-              <span className="text-xs text-slate-400">{p.tipo}</span>
-              <span className="ml-2 text-xs text-slate-500">{p.dispositivos.length} dispositivo(s)</span>
+          <div key={p.id} className="rounded-lg border border-slate-200 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <div>
+                <span className="font-medium text-slate-800">{p.nombre}</span>{' '}
+                <Badge color={p.tipo.startsWith('ENTRADA') ? 'green' : 'amber'}>{p.tipo}</Badge>
+                {!p.activo && <span className="ml-2 text-xs text-red-500">(inactivo)</span>}
+              </div>
+              <button className="text-xs font-medium text-teal-700 hover:underline" onClick={() => crearDispositivo(p.id)}>
+                + Dispositivo
+              </button>
             </div>
-            <button className="text-xs text-teal-700 hover:underline" onClick={() => crearDispositivo(p.id)}>
-              + Dispositivo
-            </button>
+
+            {p.dispositivos.length === 0 ? (
+              <p className="text-xs text-slate-400">Sin dispositivos. Agrega uno para obtener su API key.</p>
+            ) : (
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-left text-slate-400">
+                    <th className="pb-1 font-medium">Dispositivo</th>
+                    <th className="pb-1 font-medium">ID / prefijo de API key</th>
+                    <th className="pb-1 font-medium">Estado</th>
+                    <th className="pb-1 font-medium">Último latido</th>
+                    <th className="pb-1 font-medium text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {p.dispositivos.map((d) => (
+                    <tr key={d.id} className="border-t border-slate-100">
+                      <td className="py-1.5 pr-2 font-medium text-slate-700">{d.nombre}</td>
+                      <td className="py-1.5 pr-2">
+                        <code className="rounded bg-slate-100 px-1 text-slate-600">{d.id}</code>
+                      </td>
+                      <td className="py-1.5 pr-2">
+                        <Badge
+                          color={
+                            d.estado === 'OPERATIVO' ? 'green' : d.estado === 'DESCONECTADO' ? 'amber' : 'slate'
+                          }
+                        >
+                          {d.estado}
+                        </Badge>
+                      </td>
+                      <td className="py-1.5 pr-2 text-slate-500">
+                        {d.ultimoLatido ? new Date(d.ultimoLatido).toLocaleString() : '—'}
+                      </td>
+                      <td className="py-1.5 text-right">
+                        <button
+                          className="text-teal-700 hover:underline"
+                          onClick={() => regenerarLlave(d.id)}
+                        >
+                          Regenerar llave
+                        </button>
+                        {d.estado === 'FUERA_DE_SERVICIO' ? (
+                          <button
+                            className="ml-3 text-emerald-600 hover:underline"
+                            onClick={() => cambiarEstado(d.id, 'OPERATIVO')}
+                          >
+                            Reactivar
+                          </button>
+                        ) : (
+                          <button
+                            className="ml-3 text-red-600 hover:underline"
+                            onClick={() => cambiarEstado(d.id, 'FUERA_DE_SERVICIO')}
+                          >
+                            Revocar
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         ))}
       </div>
+      <p className="mt-3 text-xs text-slate-500">
+        El <strong>ID / prefijo</strong> es la parte antes del punto en la API key
+        (<code>&lt;id&gt;.&lt;secreto&gt;</code>): sirve para identificar a qué dispositivo pertenece cada llave.
+        El secreto no se puede volver a mostrar; si lo perdiste, usa <strong>Regenerar llave</strong>.
+      </p>
     </Card>
   );
 }

@@ -6,7 +6,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { TipoPuntoAcceso } from '@prisma/client';
+import { EstadoDispositivo, TipoPuntoAcceso } from '@prisma/client';
 
 export class CreatePuntoDto {
   @IsEnum(TipoPuntoAcceso)
@@ -33,4 +33,9 @@ export class CreateDispositivoDto {
   @MinLength(2)
   @MaxLength(80)
   nombre!: string;
+}
+
+export class CambiarEstadoDispositivoDto {
+  @IsEnum(EstadoDispositivo)
+  estado!: EstadoDispositivo;
 }
