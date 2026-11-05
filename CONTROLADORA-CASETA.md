@@ -57,17 +57,16 @@ sudo systemctl restart postgresql
 sudo -u postgres createdb control_accesos
 ```
 
-## 2. Subir el código (zip por scp, igual que en AWS)
-En **tu PC**:
-```powershell
-cd "C:\Users\User\OneDrive\Documentos\IntegraTECH\ThinkTech\Control de Accesos"
-git archive --format=zip -o "$env:USERPROFILE\Downloads\app.zip" main
-scp "$env:USERPROFILE\Downloads\app.zip" usuario@IP-DE-LA-CONTROLADORA:~/
-```
-En **la controladora**:
+## 2. Bajar el código (clonar desde GitHub)
+El repositorio es privado → usa un **PAT de GitHub** (igual que en AWS). Todo se
+hace **en la controladora** (no en tu PC):
 ```bash
-mkdir -p ~/Control-de-Accesos && cd ~/Control-de-Accesos && unzip -o ~/app.zip
+cd ~
+git clone https://TU_PAT@github.com/GabChung001/CA-TEST.git Control-de-Accesos
+cd Control-de-Accesos
 ```
+> Reemplaza `TU_PAT` por tu token. Para **actualizarla** después:
+> `cd ~/Control-de-Accesos && bash scripts/deploy.sh`.
 
 ## 3. Configurar el `.env` del edge
 `EDGE_SYNC_KEY` y `QR_SIGNING_SECRET` deben ser **los mismos de la nube**; los
@@ -164,5 +163,4 @@ controladora (entra a su panel local o valida el QR).
   sed -i -E "s|^CLOUD_URL=.*|CLOUD_URL=http://NUEVA-IP/api|" apps/api/.env
   sudo systemctl restart acceso-api
   ```
-- Actualizar versión: vuelve a subir el zip (paso 2) y repite el paso 4 +
-  `sudo systemctl restart acceso-api`.
+- Actualizar versión: `cd ~/Control-de-Accesos && bash scripts/deploy.sh`.
