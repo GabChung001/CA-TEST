@@ -77,10 +77,14 @@ export class EdgeSyncService implements OnModuleInit, OnModuleDestroy {
     });
     if (!pendientes.length) return;
 
+    // Se envía sin dispositivoId: los dispositivos (lectoras) son locales de la
+    // caseta y no existen en la nube → evitar violación de llave foránea.
     const r = await fetch(`${env.CLOUD_URL}/sync/movimientos`, {
       method: 'POST',
       headers: { ...this.headers(), 'content-type': 'application/json' },
-      body: JSON.stringify({ movimientos: pendientes }),
+      body: JSON.stringify({
+        movimientos: pendientes.map((m) => ({ ...m, dispositivoId: null })),
+      }),
     });
     if (!r.ok) throw new Error(`push HTTP ${r.status}`);
 

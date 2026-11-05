@@ -10,18 +10,19 @@ Los tres servicios **arrancan solos al prender la máquina** (están `enabled`):
 |---|---|
 | `acceso-api` | El cerebro: valida accesos, anti-passback, sincroniza con la nube |
 | `nginx` | Sirve el panel web (puerto 80) |
-| `acceso-lector` | La **cámara como tótem**: lee QR y registra accesos |
+| `acceso-lector@<rol>` | Una **cámara como tótem** por rol: lee QR y registra accesos. Hay una instancia por cámara (p. ej. `acceso-lector@entrada`, `acceso-lector@salida`). |
 
 Comandos (en la controladora):
 ```bash
-# Ver estado
-systemctl status acceso-api acceso-lector nginx
-# Arrancar / reiniciar / detener
-sudo systemctl start   acceso-lector
-sudo systemctl restart acceso-lector
-sudo systemctl stop    acceso-lector
-# Ver accesos en vivo (log del lector)
-sudo journalctl -u acceso-lector -f
+# Ver estado (todas las instancias de lector)
+systemctl status acceso-api nginx "acceso-lector@*"
+# Arrancar / reiniciar / detener una cámara concreta
+sudo systemctl restart acceso-lector@entrada
+sudo systemctl restart acceso-lector@salida
+# Ver accesos en vivo de una cámara
+sudo journalctl -u acceso-lector@entrada -f
+# Ver TODAS las cámaras a la vez
+sudo journalctl -f -u "acceso-lector@entrada" -u "acceso-lector@salida"
 ```
 Panel web: **http://IP-DE-LA-CONTROLADORA** (p. ej. http://192.168.100.63).
 
@@ -39,23 +40,33 @@ En el panel de la **nube** (como super admin o admin de parque) →
 vehicular y peatonal). Se **sincronizan solos** a la controladora.
 
 ## 4. Designar una cámara a entrada o salida
-En la controladora, un solo comando:
+Cada cámara es una **instancia** con nombre (`acceso-lector@<nombre>`). Un comando:
 ```bash
 cd ~/Control-de-Accesos
-PW=dev bash scripts/designar-lector.sh ENTRADA_VEHICULAR /dev/video0
+# <nombre> <cámara> <TIPO>  -> crea el dispositivo en esta controladora
+PW=dev bash scripts/designar-lector.sh entrada /dev/video0 ENTRADA_VEHICULAR
+# o, si ya creaste el dispositivo en la NUBE, pega su apiKey en vez del TIPO:
+PW=dev bash scripts/designar-lector.sh salida /dev/video4 <id>.<secreto>
 ```
-- Cambia el **TIPO** por el rol deseado (`ENTRADA_VEHICULAR`, `SALIDA_PEATONAL`, …).
-- Cambia `/dev/video0` por la cámara que corresponda.
+- `<nombre>` = etiqueta de la instancia (entrada, salida, entrada-peatonal, …).
+- `<cámara>` = `/dev/videoN` de esa cámara (ver `v4l2-ctl --list-devices`).
+- Tercer dato: el **TIPO** del punto (`ENTRADA_VEHICULAR`, `SALIDA_PEATONAL`, …)
+  para crear el dispositivo aquí, **o** la **apiKey** (`<id>.<secreto>`) si el
+  dispositivo ya se creó en la nube.
 
-El script registra la cámara como dispositivo en un punto de ese tipo, la deja
-leyendo/validando contra ese punto y reinicia el servicio. **Para cambiar el rol,
-vuelve a correrlo con otro TIPO.**
+El script deja esa cámara leyendo/validando contra su punto y arranca/reinicia su
+servicio `acceso-lector@<nombre>` (queda habilitado al arranque).
 
 ## 5. Varias cámaras a la vez (entrada Y salida)
-Una cámara = un rol. Para operar entrada y salida simultáneas necesitas **una cámara
-por carril**, cada una con su propio servicio lector apuntando a su `/dev/videoN` y su
-dispositivo (`acceso-lector-entrada`, `acceso-lector-salida`). Pídeme y te dejo el
-segundo servicio configurado.
+Una cámara = un rol. Corre `designar-lector.sh` una vez por cámara con un **nombre
+distinto**; cada una queda como su propio servicio:
+```bash
+PW=dev bash scripts/designar-lector.sh entrada /dev/video0 ENTRADA_VEHICULAR
+PW=dev bash scripts/designar-lector.sh salida  /dev/video4 SALIDA_VEHICULAR
+systemctl status "acceso-lector@*"
+```
+Para **cambiar el rol o la cámara** de una instancia, vuelve a correr el comando con
+el mismo `<nombre>`. Para **quitarla**: `sudo systemctl disable --now acceso-lector@<nombre>`.
 
 ## 6. Monitoreo
 - **En vivo (log):** `sudo journalctl -u acceso-lector -f` → verás `AUTORIZADO` / `RECHAZADO`.
