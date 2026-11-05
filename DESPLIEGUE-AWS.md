@@ -199,46 +199,141 @@ curl -s http://localhost:3001/api/health         # {"status":"ok","db":"ok",...}
 Abre en el navegador: **http://TU-IP-PUBLICA**
 
 Entra con el super admin sembrado (`felipe@thinktech.mx` / la contraseña del seed).
-Crea parque y puntos en **Configuración**, bodegas, personal + **QR**, y prueba el
-**simulador de lector** del panel.
+Crea parque y puntos de acceso en **Configuración**, bodegas, personal + **QR**.
+Los QR se validan en la **controladora de la caseta** (cámara/tótem); ver
+[CONTROLADORA-CASETA.md](CONTROLADORA-CASETA.md) y [OPERACION-CASETA.md](OPERACION-CASETA.md).
 
 ---
 
-## IP pública: fijarla o actualizarla
-
-Al **detener/reiniciar** la instancia, AWS le asigna una **IP pública nueva**. Dos opciones:
-
-**A. Fijarla con una Elastic IP (recomendado):**
-1. EC2 → **Elastic IPs** → **Allocate Elastic IP address** → Allocate.
-2. Selecciónala → **Actions → Associate** → elige tu instancia → Associate.
-3. Esa IP ya **no cambia** aunque reinicies. (Una Elastic IP *sin asociar* se cobra; asociada a una instancia encendida no.)
-
-**B. Si no usas Elastic IP:** cada vez que cambie la IP de AWS, actualiza el `CLOUD_URL` de la **controladora/edge** y reinicia su servicio:
-```bash
-cd ~/Control-de-Accesos
-sed -i -E "s|^CLOUD_URL=.*|CLOUD_URL=http://NUEVA-IP/api|" apps/api/.env
-sudo systemctl restart acceso-api
-```
-> La **web servida desde AWS no necesita cambios** al cambiar la IP (usa rutas relativas `/api`); solo el `CLOUD_URL` del edge apunta por IP.
-
 ## Actualizar a una versión nueva (desde GitHub)
 
-**Configuración única** (repo privado → autenticar con un PAT de GitHub):
+El repo `GabChung001/CA-TEST` es **público**, así que **no hace falta token**. Si el
+servidor aún apunta al remoto viejo (con PAT), déjalo en la URL pública **una sola vez**:
 ```bash
 cd ~/Control-de-Accesos
-git remote set-url origin https://TU_PAT@github.com/GabChung001/CA-TEST.git
+git remote set-url origin https://github.com/GabChung001/CA-TEST.git
 ```
-> El PAT se crea en GitHub → *Settings → Developer settings → Personal access tokens*
-> (classic con permiso `repo`, o fine-grained con *Contents: Read* sobre el repo).
-> Queda guardado en `.git/config` del servidor (texto plano, en tu propia máquina).
 
 Después, **cada actualización es un comando**:
 ```bash
 cd ~/Control-de-Accesos && bash scripts/deploy.sh
 ```
-`scripts/deploy.sh` hace: `git fetch` + `reset --hard origin/main` + `clean` +
-`pnpm install` + Prisma (generate / migrate deploy) + build de API y web +
-publicar la web + reiniciar la API. Tu `.env` **no se toca** (está en `.gitignore`).
+`scripts/deploy.sh` hace, en orden: `git fetch` + `reset --hard origin/main` + `clean`
++ `pnpm install` + Prisma (`generate` / `migrate deploy`) + build de API y web +
+copiar la web a nginx + reiniciar la API. Tu `.env` **no se toca** (está en `.gitignore`).
+
+> **Flujo completo de trabajo:** desarrollas en tu PC → `git push` a GitHub → en AWS
+> corres `bash scripts/deploy.sh`. Al terminar imprime la versión activa
+> (`git log --oneline -1`), que debe coincidir con tu último commit en GitHub.
+
+Si la carpeta de AWS **no fuera** un repo git (se instaló por zip), conviértela una vez:
+```bash
+cd ~/Control-de-Accesos
+git init
+git remote add origin https://github.com/GabChung001/CA-TEST.git
+git fetch origin
+git reset --hard origin/main      # sobre-escribe lo versionado; respeta .env (gitignored)
+bash scripts/deploy.sh
+```
+
+---
+
+## Operación y mantenimiento (día a día)
+
+### Conectarte al servidor
+Desde tu PC (PowerShell). Ajusta la IP si cambió (ver más abajo):
+```bash
+ssh -i "C:\Users\User\Downloads\KEY.pem" ec2-user@TU-IP-PUBLICA
+```
+Si da *"UNPROTECTED PRIVATE KEY FILE"* en Linux/Mac: `chmod 400 KEY.pem`. En Windows
+no aplica (NTFS); si molesta, quita herencia de permisos del archivo.
+
+### Ver el estado de los servicios
+```bash
+systemctl status acceso-api --no-pager      # API (debe decir active running)
+systemctl status nginx --no-pager           # web
+systemctl status postgresql --no-pager      # base de datos
+curl -s http://localhost:3001/api/health     # {"status":"ok",...}
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost/   # 200 = panel OK
+```
+
+### Ver logs (errores)
+```bash
+# Últimas 100 líneas de la API
+sudo journalctl -u acceso-api -n 100 --no-pager
+# En vivo (Ctrl+C para salir)
+sudo journalctl -u acceso-api -f
+# Errores de nginx
+sudo tail -n 50 /var/log/nginx/error.log
+```
+
+### Reiniciar servicios
+```bash
+sudo systemctl restart acceso-api        # tras un cambio de .env o si se trabó
+sudo systemctl restart nginx
+sudo systemctl restart postgresql
+```
+
+### Respaldo y restauración de la base de datos
+```bash
+# Respaldo (genera un archivo con fecha)
+pg_dump -U postgres control_accesos > ~/backup-$(date +%F).sql
+# Descargarlo a tu PC (desde PowerShell, en tu equipo):
+#   scp -i "C:\Users\User\Downloads\KEY.pem" ec2-user@TU-IP-PUBLICA:~/backup-*.sql .
+# Restaurar (CUIDADO: sobre-escribe datos)
+psql -U postgres control_accesos < ~/backup-2026-11-05.sql
+```
+> Programa un respaldo diario con cron si esto será productivo:
+> `echo '0 3 * * * pg_dump -U postgres control_accesos > ~/backup-$(date +\%F).sql' | crontab -`
+
+### La contraseña del super admin
+Se define en el seed. Si la olvidaste, puedes re-sembrar o cambiarla por SQL/endpoint;
+pídeme el comando. El usuario inicial es `felipe@thinktech.mx`.
+
+---
+
+## Solución de problemas
+
+| Síntoma | Causa probable | Qué hacer |
+|---|---|---|
+| El panel no carga (timeout) | Instancia apagada o IP cambió | Verifica que esté *Running* y usa la IP nueva (ver abajo) |
+| Panel carga pero **502 Bad Gateway** | La API (`acceso-api`) está caída | `sudo journalctl -u acceso-api -n 80`; corrige y `sudo systemctl restart acceso-api` |
+| `deploy.sh` falla en el build (se congela/mata) | Poca RAM (t3.micro) | Crea swap (Fase C paso 0) y reintenta |
+| Login falla / "db error" | PostgreSQL caído o `DATABASE_URL` mal | `systemctl status postgresql`; revisa `apps/api/.env` |
+| La controladora no sincroniza | `CLOUD_URL` del edge apunta a la IP vieja de AWS | Actualiza `CLOUD_URL` en el edge (ver abajo) |
+| Cambios no aparecen en el panel | Caché del navegador | **Ctrl + Shift + R** (recarga forzada) |
+| `git` pide usuario/contraseña | Remoto apunta al PAT viejo | `git remote set-url origin https://github.com/GabChung001/CA-TEST.git` |
+
+### La API no arranca tras un deploy
+Casi siempre es el `.env` o Prisma. Revisa:
+```bash
+sudo journalctl -u acceso-api -n 60 --no-pager
+cd ~/Control-de-Accesos
+pnpm --filter @acceso/api exec prisma generate   # regenerar cliente
+pnpm --filter @acceso/api exec prisma migrate deploy
+sudo systemctl restart acceso-api
+```
+
+---
+
+## IP pública: fijarla con Elastic IP (muy recomendado)
+
+Mientras la IP cambie en cada reinicio tendrás que reconfigurar la controladora.
+**Fíjala una vez** con una Elastic IP y te olvidas:
+1. EC2 → **Elastic IPs → Allocate Elastic IP address → Allocate**.
+2. Selecciónala → **Actions → Associate** → elige tu instancia → **Associate**.
+3. Esa IP ya no cambia. Actualiza entonces `CLOUD_URL` del edge **una última vez**
+   a esa IP fija y listo.
+
+Mientras **no** uses Elastic IP, cada vez que cambie la IP de AWS, en la
+**controladora/edge**:
+```bash
+cd ~/Control-de-Accesos
+sed -i -E "s|^CLOUD_URL=.*|CLOUD_URL=http://NUEVA-IP/api|" apps/api/.env
+sudo systemctl restart acceso-api
+```
+> La web servida desde AWS **no** necesita cambios al cambiar la IP (usa rutas
+> relativas `/api`); solo el `CLOUD_URL` del edge apunta por IP.
 
 ---
 
