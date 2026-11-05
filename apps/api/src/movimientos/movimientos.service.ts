@@ -59,6 +59,28 @@ export class MovimientosService {
     return { accesosHoy, rechazosHoy, dentro };
   }
 
+  /** Lista de personas actualmente DENTRO (presencia = ADENTRO), con su alcance. */
+  presentes(actor: AuthUser) {
+    return this.prisma.credencial.findMany({
+      where: this.credencialWhere(actor),
+      select: {
+        id: true,
+        tipo: true,
+        ultimaEntradaEn: true,
+        persona: {
+          select: {
+            nombre: true,
+            apellidos: true,
+            tipo: true,
+            bodega: { select: { nombre: true } },
+          },
+        },
+        vehiculo: { select: { placas: true } },
+      },
+      orderBy: { ultimaEntradaEn: 'desc' },
+    });
+  }
+
   /** Serie diaria de entradas autorizadas para el chart de asistencia. */
   async serie(actor: AuthUser, dias = 7) {
     const n = Math.min(Math.max(dias, 1), 31);
