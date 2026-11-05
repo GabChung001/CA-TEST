@@ -10,6 +10,13 @@ interface SeriePunto {
   fecha: string;
   entradas: number;
 }
+interface Presente {
+  id: string;
+  tipo: string;
+  ultimaEntradaEn: string | null;
+  persona: { nombre: string; apellidos: string | null; tipo: string; bodega: { nombre: string } | null } | null;
+  vehiculo: { placas: string } | null;
+}
 interface Movimiento {
   id: string;
   sentido: string;
@@ -26,6 +33,7 @@ export default function Panel() {
   const resumen = useApi<Resumen>('/movimientos/resumen', 3000);
   const serie = useApi<SeriePunto[]>('/movimientos/serie?dias=7', 30000);
   const movimientos = useApi<Movimiento[]>('/movimientos?limit=20', 3000);
+  const presentes = useApi<Presente[]>('/movimientos/presentes', 3000);
 
   return (
     <div className="space-y-6">
@@ -38,6 +46,47 @@ export default function Panel() {
           <Stat label="Rechazos hoy" value={resumen.data.rechazosHoy} color="text-red-600" />
         </div>
       )}
+
+      <Card className="p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-700">Personas dentro ahora</h2>
+          <Badge color="teal">{presentes.data?.length ?? 0}</Badge>
+        </div>
+        {presentes.loading && !presentes.data ? (
+          <Spinner />
+        ) : (presentes.data?.length ?? 0) === 0 ? (
+          <p className="text-sm text-slate-500">Nadie dentro en este momento.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs text-slate-500">
+                  <th className="py-2">Persona</th>
+                  <th>Bodega</th>
+                  <th>Tipo</th>
+                  <th>Placas</th>
+                  <th>Entró</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(presentes.data ?? []).map((c) => (
+                  <tr key={c.id} className="border-b border-slate-100">
+                    <td className="py-2 font-medium text-slate-800">
+                      {`${c.persona?.nombre ?? '—'} ${c.persona?.apellidos ?? ''}`.trim()}
+                    </td>
+                    <td className="text-slate-600">{c.persona?.bodega?.nombre ?? '—'}</td>
+                    <td>
+                      <Badge color={c.tipo === 'VEHICULAR' ? 'green' : 'slate'}>{c.tipo}</Badge>
+                    </td>
+                    <td className="text-slate-600">{c.vehiculo?.placas ?? '—'}</td>
+                    <td className="text-slate-500">{c.ultimaEntradaEn ? fechaHora(c.ultimaEntradaEn) : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
 
       <Card className="p-5">
         <h2 className="mb-4 text-sm font-semibold text-slate-700">Entradas por día (7 días)</h2>

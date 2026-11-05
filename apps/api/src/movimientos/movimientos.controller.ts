@@ -14,6 +14,11 @@ export class MovimientosController {
     return this.svc.resumen(u);
   }
 
+  @Get('presentes')
+  presentes(@CurrentUser() u: AuthUser) {
+    return this.svc.presentes(u);
+  }
+
   @Get('serie')
   serie(@CurrentUser() u: AuthUser, @Query('dias') dias?: string) {
     return this.svc.serie(u, dias ? Number(dias) : 7);
