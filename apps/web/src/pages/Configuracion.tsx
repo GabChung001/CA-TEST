@@ -164,11 +164,15 @@ function ParquesCard() {
       </form>
       <ul className="space-y-1 text-sm text-slate-700">
         {(parques.data ?? []).map((p) => (
-          <li key={p.id} className="border-b border-slate-100 py-1">
-            {p.nombre}
+          <li key={p.id} className="flex flex-col border-b border-slate-100 py-1">
+            <span className="font-medium">{p.nombre}</span>
+            <code className="text-[11px] text-slate-400">PARQUE_ID: {p.id}</code>
           </li>
         ))}
       </ul>
+      <p className="mt-2 text-xs text-slate-500">
+        El <code>PARQUE_ID</code> se usa para designar cada controladora de caseta a su parque.
+      </p>
     </Card>
   );
 }

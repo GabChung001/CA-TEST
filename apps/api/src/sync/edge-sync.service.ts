@@ -59,7 +59,8 @@ export class EdgeSyncService implements OnModuleInit, OnModuleDestroy {
   /** Baja el catálogo de la nube y lo refleja localmente. */
   private async pull() {
     const env = loadEnv();
-    const r = await fetch(`${env.CLOUD_URL}/sync/catalogo`, {
+    const filtro = env.PARQUE_ID ? `?parqueId=${encodeURIComponent(env.PARQUE_ID)}` : '';
+    const r = await fetch(`${env.CLOUD_URL}/sync/catalogo${filtro}`, {
       headers: this.headers(),
     });
     if (!r.ok) throw new Error(`pull HTTP ${r.status}`);

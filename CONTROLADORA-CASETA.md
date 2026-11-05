@@ -12,6 +12,11 @@ Todo se hace **por terminal/SSH**, sin monitor.
 > Valores que debes copiar **idénticos** desde la nube (de su `apps/api/.env`):
 > - `EDGE_SYNC_KEY` → autentica la controladora con la nube.
 > - `QR_SIGNING_SECRET` → para que los QR emitidos en la nube validen aquí.
+>
+> Y el **parque que atiende esta caseta**:
+> - `PARQUE_ID` → lo ves en la web, en **Configuración → Parques**. Con él, la
+>   controladora **solo sincroniza y valida ese parque** (los accesos son por
+>   parque/bodega). Cada caseta = un parque.
 
 ---
 
@@ -77,6 +82,7 @@ SYNC_ROLE=edge
 CLOUD_URL=http://TU-IP-NUBE/api
 EDGE_SYNC_KEY=PEGA-LA-MISMA-LLAVE-DE-LA-NUBE
 SYNC_INTERVAL_SEG=30
+PARQUE_ID=EL-ID-DEL-PARQUE-DE-ESTA-CASETA
 
 QR_SIGNING_SECRET=PEGA-EL-MISMO-QR_SIGNING_SECRET-DE-LA-NUBE
 
