@@ -60,7 +60,29 @@ cd ~/Control-de-Accesos && bash scripts/reiniciar-caseta.sh
 
 ---
 
-## 3. Si una cámara dejó de leer
+## 3. Ver TODOS los accesos en vivo (entradas y salidas)
+
+Para ver en tiempo real lo que leen **todas las cámaras a la vez** (entrada y salida),
+un solo comando:
+
+```bash
+cd ~/Control-de-Accesos && bash scripts/ver-accesos.sh
+```
+
+Cada línea muestra la hora, la cámara (`[entrada]` / `[salida]`) y el resultado:
+
+```
+22:31:04 [entrada] AUTORIZADO Juan Pérez — Bodega 12 [ABC-123]
+22:31:40 [entrada] RECHAZADO (REINGRESO_NO_PERMITIDO) Juan Pérez — Bodega 12
+22:33:10 [salida]  AUTORIZADO Juan Pérez — Bodega 12
+```
+
+Ciérralo con **Ctrl + C**. (También está el historial completo en el panel web,
+en *Historial de accesos*.)
+
+---
+
+## 4. Si una cámara dejó de leer
 
 1. Revisa que la cámara esté **bien conectada** (desconéctala y vuelve a conectarla).
 2. Mira las cámaras que la computadora reconoce:
@@ -76,17 +98,18 @@ bash scripts/estado-caseta.sh
 sudo systemctl restart acceso-lector@entrada acceso-lector@salida
 ```
 
-4. Para ver en vivo lo que lee una cámara (sale `AUTORIZADO` / `RECHAZADO`):
+4. Para ver en vivo lo que lee **una** cámara específica:
 
 ```bash
 sudo journalctl -u acceso-lector@entrada -f
 ```
 
-   (Ciérralo con **Ctrl + C**.)
+   (Para ver **todas** a la vez, usa `bash scripts/ver-accesos.sh` — sección 3.
+   Ciérralo con **Ctrl + C**.)
 
 ---
 
-## 4. Si moviste o cambiaste una cámara de lugar
+## 5. Si moviste o cambiaste una cámara de lugar
 
 Si conectaste una cámara nueva o la cambiaste de puerto, hay que **volver a indicarle
 su rol** (entrada o salida). Un comando por cámara:
@@ -104,7 +127,7 @@ El detalle completo de roles (entrada/salida, vehicular/peatonal) está en
 
 ---
 
-## 5. ¿Internet caído? El sistema sigue trabajando
+## 6. ¿Internet caído? El sistema sigue trabajando
 
 La caseta **funciona sin internet**: valida los QR localmente y guarda todos los
 accesos. Cuando vuelve el internet, **sube solo** los registros a la nube. No pierdes
@@ -112,12 +135,13 @@ ningún movimiento.
 
 ---
 
-## 6. Resumen de un vistazo
+## 7. Resumen de un vistazo
 
 | Situación | Qué hacer |
 |---|---|
 | Se fue y volvió la luz | Enciende la PC, espera 2 min, abre el panel |
 | El panel no carga | `Ctrl+Shift+R`; si sigue, `bash scripts/reiniciar-caseta.sh` |
+| Ver accesos en vivo (todas) | `bash scripts/ver-accesos.sh` |
 | Una cámara no lee | Reconéctala y `sudo systemctl restart acceso-lector@entrada acceso-lector@salida` |
 | Ver estado general | `bash scripts/estado-caseta.sh` |
 | Reiniciar todo | `bash scripts/reiniciar-caseta.sh` |
