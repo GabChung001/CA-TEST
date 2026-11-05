@@ -22,10 +22,10 @@ interface Movimiento {
 }
 
 export default function Panel() {
-  // Auto-refresco cada 8 s (actualización silenciosa, sin recargar la página).
-  const resumen = useApi<Resumen>('/movimientos/resumen', 8000);
+  // Auto-refresco cada 3 s (actualización silenciosa, sin recargar la página).
+  const resumen = useApi<Resumen>('/movimientos/resumen', 3000);
   const serie = useApi<SeriePunto[]>('/movimientos/serie?dias=7', 30000);
-  const movimientos = useApi<Movimiento[]>('/movimientos?limit=20', 8000);
+  const movimientos = useApi<Movimiento[]>('/movimientos?limit=20', 3000);
 
   return (
     <div className="space-y-6">

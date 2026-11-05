@@ -27,4 +27,11 @@ zbarcam --nodisplay --raw "$VIDEO_DEV" 2>/dev/null | while IFS= read -r qr; do
       }catch(e){console.log("sin respuesta: "+d.slice(0,120));}
     });')
   echo "$(date +%T) [$ROL] $linea"
+  # Si el acceso fue autorizado, la API responde abrirBarrera:true.
+  if printf '%s' "$res" | grep -q '"abrirBarrera":true'; then
+    echo "          >>> PLUMA/BARRERA ABIERTA [$ROL]"
+    # Hook opcional para el relay/ESP32: si existe ~/abrir-pluma.sh se ejecuta
+    # con el rol como argumento (p. ej. activar un GPIO / relé USB).
+    [ -x "$HOME/abrir-pluma.sh" ] && "$HOME/abrir-pluma.sh" "$ROL" &
+  fi
 done
