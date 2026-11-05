@@ -7,5 +7,6 @@ import { EdgeSyncService } from './edge-sync.service';
 @Module({
   controllers: [SyncController],
   providers: [SyncService, SyncKeyGuard, EdgeSyncService],
+  exports: [EdgeSyncService],
 })
 export class SyncModule {}

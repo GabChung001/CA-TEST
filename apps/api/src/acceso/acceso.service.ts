@@ -3,6 +3,7 @@ import type { MotivoRechazo, Prisma } from '@prisma/client';
 import { QR_PREFIJO, type ResultadoValidacion } from '@acceso/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { QrService } from '../qr/qr.service';
+import { EdgeSyncService } from '../sync/edge-sync.service';
 
 interface EntradaValidacion {
   qr: string;
@@ -20,6 +21,7 @@ export class AccesoService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly qr: QrService,
+    private readonly edge: EdgeSyncService,
   ) {}
 
   async validar(p: EntradaValidacion): Promise<ResultadoValidacion> {
@@ -98,6 +100,7 @@ export class AccesoService {
         snapshot,
       },
     });
+    this.edge.pushAhora(); // sube el acceso a la nube casi al instante (si es edge)
 
     return {
       resultado: 'AUTORIZADO',
@@ -136,6 +139,7 @@ export class AccesoService {
         motivoManual: motivo,
       },
     });
+    this.edge.pushAhora();
     return {
       resultado: 'AUTORIZADO',
       sentido,
@@ -165,6 +169,7 @@ export class AccesoService {
         snapshot,
       },
     });
+    this.edge.pushAhora();
     return {
       resultado: 'RECHAZADO',
       sentido,

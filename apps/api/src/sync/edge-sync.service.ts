@@ -17,6 +17,7 @@ export class EdgeSyncService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger('EdgeSync');
   private timer?: ReturnType<typeof setInterval>;
   private corriendo = false;
+  private pushProgramado?: ReturnType<typeof setTimeout>;
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -37,6 +38,36 @@ export class EdgeSyncService implements OnModuleInit, OnModuleDestroy {
 
   onModuleDestroy() {
     if (this.timer) clearInterval(this.timer);
+    if (this.pushProgramado) clearTimeout(this.pushProgramado);
+  }
+
+  /**
+   * Dispara un push casi inmediato tras registrar un acceso, para que el movimiento
+   * llegue a la nube en ~1s en vez de esperar al ciclo de 10s. Solo aplica en edge.
+   * Debounced: varias lecturas seguidas se agrupan en un solo push.
+   */
+  pushAhora() {
+    const env = loadEnv();
+    if (env.SYNC_ROLE !== 'edge' || !env.CLOUD_URL || !env.EDGE_SYNC_KEY) return;
+    if (this.pushProgramado) return; // ya hay uno en cola → se agrupan
+    this.pushProgramado = setTimeout(() => {
+      this.pushProgramado = undefined;
+      void this.pushSeguro();
+    }, 700);
+  }
+
+  private async pushSeguro() {
+    if (this.corriendo) return;
+    this.corriendo = true;
+    try {
+      await this.push();
+    } catch (e) {
+      this.logger.warn(
+        `Push inmediato falló (se reintentará en el ciclo): ${(e as Error).message}`,
+      );
+    } finally {
+      this.corriendo = false;
+    }
   }
 
   private async ciclo() {
