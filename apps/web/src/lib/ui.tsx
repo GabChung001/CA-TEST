@@ -136,8 +136,12 @@ export function Modal({
   );
 }
 
-/** Hook de carga de datos con recarga manual. */
-export function useApi<T>(path: string | null) {
+/**
+ * Hook de carga de datos con recarga manual y, opcionalmente, auto-refresco.
+ * @param refreshMs si se indica (p. ej. 8000), recarga sola cada N ms sin
+ *                  mostrar el spinner (actualización silenciosa en segundo plano).
+ */
+export function useApi<T>(path: string | null, refreshMs?: number) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -159,6 +163,22 @@ export function useApi<T>(path: string | null) {
       cancel = true;
     };
   }, [path, tick]);
+
+  // Auto-refresco silencioso (sin spinner): sólo vuelve a pedir los datos.
+  useEffect(() => {
+    if (!path || !refreshMs) return;
+    let cancel = false;
+    const id = setInterval(() => {
+      api
+        .get<T>(path)
+        .then((d) => !cancel && (setData(d), setError(null)))
+        .catch(() => {});
+    }, refreshMs);
+    return () => {
+      cancel = true;
+      clearInterval(id);
+    };
+  }, [path, refreshMs]);
 
   return { data, loading, error, reload: () => setTick((t) => t + 1) };
 }
