@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
+import type { EstadoDispositivo, Prisma } from '@prisma/client';
 import { hash as argonHash, verify as argonVerify } from '@node-rs/argon2';
 import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -50,7 +50,18 @@ export class PuntosService {
   listar(actor: AuthUser) {
     return this.prisma.puntoAcceso.findMany({
       where: this.where(actor),
-      include: { dispositivos: { select: { id: true, nombre: true, estado: true, ultimoLatido: true } } },
+      include: {
+        dispositivos: {
+          select: {
+            id: true,
+            nombre: true,
+            estado: true,
+            ultimoLatido: true,
+            creadoEn: true,
+          },
+          orderBy: { creadoEn: 'asc' },
+        },
+      },
       orderBy: { creadoEn: 'asc' },
     });
   }
@@ -78,6 +89,53 @@ export class PuntosService {
     });
     // La apiKey se muestra UNA sola vez.
     return { id: disp.id, nombre: disp.nombre, apiKey: `${disp.id}.${secreto}` };
+  }
+
+  /** Genera una nueva API key para un dispositivo existente (invalida la anterior). */
+  async regenerarLlave(actor: AuthUser, dispositivoId: string) {
+    const disp = await this.getDispositivoEnAmbito(actor, dispositivoId);
+    const secreto = randomBytes(24).toString('base64url');
+    await this.prisma.dispositivo.update({
+      where: { id: disp.id },
+      data: { apiKeyHash: await argonHash(secreto), estado: 'OPERATIVO' },
+    });
+    await this.audit.registrar({
+      usuarioId: actor.sub,
+      accion: 'DISPOSITIVO_LLAVE_REGENERADA',
+      entidad: 'Dispositivo',
+      entidadId: disp.id,
+    });
+    // La apiKey se muestra UNA sola vez.
+    return { id: disp.id, nombre: disp.nombre, apiKey: `${disp.id}.${secreto}` };
+  }
+
+  /** Revoca (FUERA_DE_SERVICIO) o reactiva (OPERATIVO) un dispositivo. */
+  async cambiarEstado(
+    actor: AuthUser,
+    dispositivoId: string,
+    estado: EstadoDispositivo,
+  ) {
+    const disp = await this.getDispositivoEnAmbito(actor, dispositivoId);
+    await this.prisma.dispositivo.update({ where: { id: disp.id }, data: { estado } });
+    await this.audit.registrar({
+      usuarioId: actor.sub,
+      accion: estado === 'FUERA_DE_SERVICIO' ? 'DISPOSITIVO_REVOCADO' : 'DISPOSITIVO_REACTIVADO',
+      entidad: 'Dispositivo',
+      entidadId: disp.id,
+    });
+    return { id: disp.id, estado };
+  }
+
+  private async getDispositivoEnAmbito(actor: AuthUser, dispositivoId: string) {
+    const disp = await this.prisma.dispositivo.findUnique({
+      where: { id: dispositivoId },
+      include: { puntoAcceso: true },
+    });
+    if (!disp) throw new NotFoundException('Dispositivo no encontrado');
+    if (actor.rol !== 'SUPER_ADMIN' && disp.puntoAcceso.parqueId !== actor.parqueId) {
+      throw new ForbiddenException('Fuera de tu ámbito');
+    }
+    return disp;
   }
 
   async verificarDispositivo(

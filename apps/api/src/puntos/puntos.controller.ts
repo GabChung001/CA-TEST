@@ -4,6 +4,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/types';
 import { PuntosService } from './puntos.service';
 import {
+  CambiarEstadoDispositivoDto,
   CreateDispositivoDto,
   CreatePuntoDto,
   UpdatePuntoDto,
@@ -43,5 +44,21 @@ export class PuntosController {
     @Body() dto: CreateDispositivoDto,
   ) {
     return this.svc.crearDispositivo(u, id, dto);
+  }
+
+  @Post('dispositivos/:devId/regenerar')
+  @Roles('SUPER_ADMIN', 'ADMIN_PARQUE')
+  regenerarLlave(@CurrentUser() u: AuthUser, @Param('devId') devId: string) {
+    return this.svc.regenerarLlave(u, devId);
+  }
+
+  @Patch('dispositivos/:devId/estado')
+  @Roles('SUPER_ADMIN', 'ADMIN_PARQUE')
+  cambiarEstado(
+    @CurrentUser() u: AuthUser,
+    @Param('devId') devId: string,
+    @Body() dto: CambiarEstadoDispositivoDto,
+  ) {
+    return this.svc.cambiarEstado(u, devId, dto.estado);
   }
 }
