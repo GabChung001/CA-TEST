@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import jsQR from 'jsqr';
 import { api, ApiError } from '../lib/api';
 import type { ResultadoValidacion } from '../lib/tipos';
 import { Badge, Button, Card, Field, Select, Spinner, useApi } from '../lib/ui';
@@ -10,11 +11,6 @@ interface Punto {
   activo: boolean;
 }
 
-// BarcodeDetector no está en los tipos del DOM: acceso laxo.
-type DetectorCtor = new (opts: { formats: string[] }) => {
-  detect: (src: CanvasImageSource) => Promise<{ rawValue: string }[]>;
-};
-
 export default function Lector() {
   const puntos = useApi<Punto[]>('/puntos');
   const [puntoId, setPuntoId] = useState('');
@@ -23,21 +19,17 @@ export default function Lector() {
   const [error, setError] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const puntoRef = useRef(puntoId);
   const ultimo = useRef<{ code: string; t: number }>({ code: '', t: 0 });
 
   puntoRef.current = puntoId;
-  const soportado =
-    typeof window !== 'undefined' && 'BarcodeDetector' in window;
 
   useEffect(() => {
     if (!activo) return;
     let cancelado = false;
     let timer = 0;
-    const Detector = (window as unknown as { BarcodeDetector: DetectorCtor })
-      .BarcodeDetector;
-    const detector = new Detector({ formats: ['qr_code'] });
 
     const validar = async (qr: string) => {
       const pid = puntoRef.current;
@@ -48,31 +40,37 @@ export default function Lector() {
           puntoAccesoId: pid,
         });
         setRes(r);
+        setError(null);
       } catch (e) {
         setError(e instanceof ApiError ? e.message : 'Error de validación');
       }
     };
 
-    const tick = async () => {
+    const tick = () => {
       if (cancelado) return;
       const v = videoRef.current;
-      if (v && v.readyState >= 2) {
-        try {
-          const codes = await detector.detect(v);
-          if (codes.length) {
-            const raw = codes[0].rawValue;
+      const c = canvasRef.current;
+      if (v && c && v.readyState >= 2 && v.videoWidth > 0) {
+        c.width = v.videoWidth;
+        c.height = v.videoHeight;
+        const ctx = c.getContext('2d', { willReadFrequently: true });
+        if (ctx) {
+          ctx.drawImage(v, 0, 0, c.width, c.height);
+          const img = ctx.getImageData(0, 0, c.width, c.height);
+          const code = jsQR(img.data, img.width, img.height, {
+            inversionAttempts: 'dontInvert',
+          });
+          if (code && code.data) {
             const now = Date.now();
             // Evita re-escanear el mismo QR en 4 s.
-            if (raw && (raw !== ultimo.current.code || now - ultimo.current.t > 4000)) {
-              ultimo.current = { code: raw, t: now };
-              void validar(raw);
+            if (code.data !== ultimo.current.code || now - ultimo.current.t > 4000) {
+              ultimo.current = { code: code.data, t: now };
+              void validar(code.data);
             }
           }
-        } catch {
-          /* cuadro sin QR */
         }
       }
-      timer = window.setTimeout(tick, 350);
+      timer = window.setTimeout(tick, 250);
     };
 
     (async () => {
@@ -108,23 +106,11 @@ export default function Lector() {
     <div className="space-y-6">
       <h1 className="text-xl font-semibold text-slate-900">Lector (cámara)</h1>
 
-      {!soportado && (
-        <Card className="p-4">
-          <p className="text-sm text-amber-700">
-            Este navegador no soporta la lectura de QR por cámara. Usa Chrome o Edge.
-          </p>
-        </Card>
-      )}
-
       <Card className="p-5">
         <div className="flex flex-wrap items-end gap-4">
           <div className="w-72">
             <Field label="Punto de acceso">
-              <Select
-                value={puntoId}
-                onChange={(e) => setPuntoId(e.target.value)}
-                disabled={activo}
-              >
+              <Select value={puntoId} onChange={(e) => setPuntoId(e.target.value)} disabled={activo}>
                 <option value="">Selecciona…</option>
                 {(puntos.data ?? []).map((p) => (
                   <option key={p.id} value={p.id}>
@@ -135,11 +121,16 @@ export default function Lector() {
             </Field>
           </div>
           {!activo ? (
-            <Button disabled={!puntoId || !soportado} onClick={() => { setError(null); setRes(null); setActivo(true); }}>
+            <Button
+              disabled={!puntoId}
+              onClick={() => { setError(null); setRes(null); setActivo(true); }}
+            >
               Iniciar cámara
             </Button>
           ) : (
-            <Button variant="danger" onClick={() => setActivo(false)}>Detener</Button>
+            <Button variant="danger" onClick={() => setActivo(false)}>
+              Detener
+            </Button>
           )}
         </div>
         {puntos.loading && <Spinner />}
@@ -158,6 +149,7 @@ export default function Lector() {
             muted
             playsInline
           />
+          <canvas ref={canvasRef} className="hidden" />
           {!activo && (
             <div className="p-3 text-center text-xs text-slate-400">
               La cámara aparece aquí al iniciar. Muestra el QR frente a ella.
@@ -192,13 +184,9 @@ function ResultadoAcceso({ res }: { res: ResultadoValidacion | null }) {
         {ok ? '✓ ACCESO' : '✗ RECHAZADO'}
       </div>
       {res.persona && (
-        <div className="mt-3 text-lg font-medium text-slate-800">
-          {res.persona.nombre}
-        </div>
+        <div className="mt-3 text-lg font-medium text-slate-800">{res.persona.nombre}</div>
       )}
-      {res.persona?.bodega && (
-        <div className="text-sm text-slate-600">{res.persona.bodega}</div>
-      )}
+      {res.persona?.bodega && <div className="text-sm text-slate-600">{res.persona.bodega}</div>}
       {res.persona?.placas && (
         <div className="text-sm text-slate-600">Placas: {res.persona.placas}</div>
       )}
