@@ -4,6 +4,7 @@ import { QR_PREFIJO, type ResultadoValidacion } from '@acceso/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { QrService } from '../qr/qr.service';
 import { EdgeSyncService } from '../sync/edge-sync.service';
+import { BarreraService } from '../barrera/barrera.service';
 
 interface EntradaValidacion {
   qr: string;
@@ -22,6 +23,7 @@ export class AccesoService {
     private readonly prisma: PrismaService,
     private readonly qr: QrService,
     private readonly edge: EdgeSyncService,
+    private readonly barrera: BarreraService,
   ) {}
 
   async validar(p: EntradaValidacion): Promise<ResultadoValidacion> {
@@ -102,10 +104,13 @@ export class AccesoService {
     });
     this.edge.pushAhora(); // sube el acceso a la nube casi al instante (si es edge)
 
+    // Acciona la barrera/pluma (abrir, y si seguía abierta esperar/reabrir).
+    const barrera = await this.barrera.conceder({ id: punto.id, tipo: punto.tipo });
+
     return {
       resultado: 'AUTORIZADO',
       sentido,
-      abrirBarrera: true,
+      abrirBarrera: barrera.accion !== 'negada',
       persona: {
         nombre: `${cred.persona.nombre} ${cred.persona.apellidos ?? ''}`.trim(),
         tipo: cred.persona.tipo,
@@ -114,6 +119,7 @@ export class AccesoService {
       },
       vigenciaHasta: cred.vigenciaHasta ? cred.vigenciaHasta.toISOString() : null,
       movimientoId: mov.id,
+      barrera,
     };
   }
 
@@ -140,11 +146,13 @@ export class AccesoService {
       },
     });
     this.edge.pushAhora();
+    const barrera = await this.barrera.conceder({ id: punto.id, tipo: punto.tipo });
     return {
       resultado: 'AUTORIZADO',
       sentido,
-      abrirBarrera: true,
+      abrirBarrera: barrera.accion !== 'negada',
       movimientoId: mov.id,
+      barrera,
     };
   }
 
