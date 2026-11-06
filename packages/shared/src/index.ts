@@ -128,4 +128,10 @@ export interface ResultadoValidacion {
   };
   vigenciaHasta?: string | null;
   movimientoId: string;
+  /** Resultado del control de la barrera/pluma (abrir, esperar cierre, reabrir). */
+  barrera?: {
+    accion: 'abierta' | 'esperada' | 'reabierta' | 'negada' | 'sin_barrera';
+    esperoCierre: boolean;
+    detalle: string;
+  };
 }

@@ -27,6 +27,22 @@ const schema = z.object({
   EDGE_SYNC_KEY: z.string().optional(), // secreto compartido entre nube y edge
   SYNC_INTERVAL_SEG: z.coerce.number().int().positive().default(60),
   PARQUE_ID: z.string().optional(), // solo edge: el parque que atiende esta controladora
+
+  // Barrera / pluma. 'ninguno' = no se controla barrera (default, p. ej. en la nube).
+  // 'simulado' = se simula en memoria (para pruebas sin hardware).
+  // 'hikvision' = se controla un DS-K28xx por ISAPI.
+  BARRERA_MODO: z.enum(['ninguno', 'simulado', 'hikvision']).default('ninguno'),
+  BARRERA_PULSO_SEG: z.coerce.number().int().positive().default(5),
+  BARRERA_ESPERA_CIERRE_MS: z.coerce.number().int().positive().default(6000),
+  BARRERA_POLITICA_ABIERTA: z.enum(['reabrir', 'negar']).default('reabrir'),
+  // Mapeo de puerta del controlador por tipo de punto (solo hikvision).
+  BARRERA_DOOR_ENTRADA: z.string().default('1'),
+  BARRERA_DOOR_SALIDA: z.string().default('2'),
+  // Conexión al DS-K28xx (solo hikvision, auth Digest).
+  HIKVISION_URL: z.string().url().optional(), // p. ej. http://192.168.100.50
+  HIKVISION_USER: z.string().optional(),
+  HIKVISION_PASS: z.string().optional(),
+  HIKVISION_STATUS_PATH: z.string().optional(), // endpoint de estado (varía por firmware)
 });
 
 export type Env = z.infer<typeof schema>;

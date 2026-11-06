@@ -1,0 +1,19 @@
+[Unit]
+Description=Lector de QR por pistola HID - instancia %i
+After=network-online.target acceso-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=dev
+WorkingDirectory=/home/dev/Control-de-Accesos
+Environment=ROL=%i
+# Cada instancia carga su propio archivo: ~/.scanner-<instancia>.env
+# con KEY=<apiKey del dispositivo> y SCANNER_DEV=/dev/input/by-id/...-event-kbd
+EnvironmentFile=/home/dev/.scanner-%i.env
+ExecStart=/usr/bin/env python3 /home/dev/Control-de-Accesos/scripts/lector-hid.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
