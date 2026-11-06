@@ -8,6 +8,16 @@ vulnerabilidad comunes (inyección, credenciales débiles, exposición de datos)
 > **sin PHP**. Prisma genera consultas parametrizadas → se elimina la inyección SQL
 > por construcción. Toda entrada se valida con esquema (class-validator / zod).
 
+> **Estado actual (2026-11) — implementado vs. pendiente.** Este documento es la
+> **línea base/objetivo** de SGSI. Lo ya **implementado**: Argon2id, JWT acceso+refresh
+> con hash en `Sesion`, MFA TOTP **disponible**, bloqueo por intentos, RBAC + aislamiento
+> por parque/bodega, QR firmado HMAC, API key por dispositivo, validación de entrada,
+> Helmet/CORS/rate-limiting, bitácora (`Movimiento`) y `AuditLog`, sync idempotente con
+> `EDGE_SYNC_KEY`, operación offline. **Pendiente** (ambiente de pruebas): **HTTPS/TLS**
+> (hoy AWS por HTTP; por eso la cookie de refresh aún no va `Secure` y no hay mTLS),
+> **cifrado en reposo** de `mfaSecret`, **respaldos automáticos** programados, y hacer el
+> MFA **obligatorio** por política. Se cierran al endurecer para producción.
+
 ---
 
 ## 1. Autenticación

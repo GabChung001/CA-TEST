@@ -27,7 +27,7 @@ Todo se hace **por terminal/SSH**, sin monitor.
 
 ### Crear la VM e instalar Ubuntu Server (para pruebas en tu PC)
 1. En **VirtualBox** o **Hyper-V**, crea una VM Linux 64-bit: **2 vCPU, 2–4 GB RAM, 20 GB** de disco.
-2. **Red en modo "Puente/Bridged"** → la VM tendrá su propia IP en tu LAN (así tu laptop, los lectores y el ESP32 la alcanzan).
+2. **Red en modo "Puente/Bridged"** → la VM tendrá su propia IP en tu LAN (así tu laptop, los lectores y el Hikvision la alcanzan).
 3. Monta la ISO de **Ubuntu Server 24.04 LTS** e instala; en el instalador marca **"Install OpenSSH server"**. Define tu usuario y contraseña.
 4. Al terminar, dentro de la VM corre `ip a` para ver su IP, y desde tu laptop: `ssh usuario@IP-DE-LA-VM`.
 5. Sigue el resto de esta guía por SSH (sin monitor).

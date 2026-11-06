@@ -217,7 +217,7 @@ es usar el **DS-K2812 como el "músculo" que abre la puerta/pluma**, y dejar la 
 en nuestra controladora. Tres caminos, de más simple a más integrado:
 
 1. **Relé a la entrada de "botón de salida" (lo más simple y a prueba de todo).**
-   Nuestra controladora, al autorizar, cierra un relé (USB o ESP32) conectado a la entrada
+   Nuestra controladora, al autorizar, cierra un relé (USB) conectado a la entrada
    de **exit button / request-to-exit** del DS-K2812 (o directo a la cerradura por el relé de
    puerta del Hikvision). El DS-K2812 abre esa puerta. No depende de API ni firmware; es el
    hook `abrir-pluma.sh` que ya dejamos, ahora disparando al Hikvision.
