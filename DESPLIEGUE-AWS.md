@@ -80,25 +80,24 @@ sudo -u postgres createdb control_accesos
 
 ---
 
-## Fase D — Subir el código (zip por scp, sin GitHub)
+## Fase D — Bajar el código (clonar el repo público)
 
-`git archive` empaqueta **solo lo versionado** (sin `node_modules` ni los `.env`),
-así que el zip queda limpio y ligero.
-
-En **tu equipo de desarrollo** (PowerShell, dentro de la carpeta del proyecto):
-
-```powershell
-cd "C:\Users\User\OneDrive\Documentos\IntegraTECH\ThinkTech\Control de Accesos"
-git archive --format=zip -o "$env:USERPROFILE\Downloads\app.zip" main
-scp -i "C:\Users\User\Downloads\KEY.pem" "$env:USERPROFILE\Downloads\app.zip" ec2-user@TU-IP-PUBLICA:~/
-```
-
-En **el servidor**:
+El repositorio es **público**, así que se clona **sin token**, directo en el servidor:
 
 ```bash
-sudo dnf install -y unzip
-mkdir -p ~/Control-de-Accesos && cd ~/Control-de-Accesos && unzip -o ~/app.zip
+cd ~
+git clone https://github.com/GabChung001/CA-TEST.git Control-de-Accesos
+cd Control-de-Accesos
 ```
+
+> Así `scripts/deploy.sh` funciona tal cual para actualizar después (hace `git pull`).
+>
+> **Alternativa sin GitHub (offline):** desde tu PC
+> `git archive --format=zip -o "$env:USERPROFILE\Downloads\app.zip" main`, súbelo con
+> `scp -i KEY.pem app.zip ec2-user@IP:~/` y en el servidor
+> `sudo dnf install -y unzip && mkdir -p ~/Control-de-Accesos && cd ~/Control-de-Accesos && unzip -o ~/app.zip`.
+> (Ojo: así NO queda como repo git; para usar `deploy.sh` conviértelo como indica
+> "Actualizar a una versión nueva".)
 
 ---
 
