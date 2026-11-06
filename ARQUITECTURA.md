@@ -4,6 +4,16 @@ Sistema de control de acceso **vehicular y peatonal por QR** para parques
 industriales. Administración en la **nube** y validación de accesos en un
 **nodo local (edge) en la caseta** que opera aun sin internet.
 
+> **Estado actual (2026-11):** implementado y en operación. Precisiones sobre este
+> documento de diseño:
+> - El **edge NO es un proyecto aparte** (`apps/edge`): es la MISMA `apps/api` con
+>   `SYNC_ROLE=edge`. La misma base de código corre en la nube y en la caseta.
+> - El **panel en vivo** se actualiza por **polling cada 3 s** (no WebSocket).
+> - El **control de barrera** es el módulo `apps/api/src/barrera` (backends
+>   `simulado` y `hikvision` por ISAPI). Ver [DEFINICION-PRUEBAS-HIKVISION.md](./DEFINICION-PRUEBAS-HIKVISION.md).
+> - Lectores: **cámara** (`zbarcam`) o **pistola QR HID**. Repo **público**.
+> - Índice completo y estado: [GUIA-MAESTRA.md](./GUIA-MAESTRA.md).
+
 ---
 
 ## 1. Topología
@@ -138,9 +148,9 @@ La autorización se verifica **siempre en el servidor** (ver `SEGURIDAD-SGSI.md`
 ```
 control-accesos/
 ├─ apps/
-│  ├─ api/      API en la nube (NestJS + Prisma)   ← schema en prisma/
-│  ├─ web/      SPA de administración (React/Vite)
-│  └─ edge/     Nodo local de caseta (NestJS)       ← fase posterior
+│  ├─ api/      API única (nube o caseta según SYNC_ROLE)  ← schema en prisma/
+│  └─ web/      SPA de administración y panel (React/Vite)
+├─ scripts/     deploy, lectores (cámara/pistola), barrera, operación de caseta
 ├─ packages/
 │  └─ shared/   Tipos de dominio, roles, QR, contratos
 ├─ docker-compose.yml   PostgreSQL local

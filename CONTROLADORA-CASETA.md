@@ -58,15 +58,14 @@ sudo -u postgres createdb control_accesos
 ```
 
 ## 2. Bajar el código (clonar desde GitHub)
-El repositorio es privado → usa un **PAT de GitHub** (igual que en AWS). Todo se
-hace **en la controladora** (no en tu PC):
+El repositorio es **público**, así que se clona **sin token**. Todo se hace **en la
+controladora** (no en tu PC):
 ```bash
 cd ~
-git clone https://TU_PAT@github.com/GabChung001/CA-TEST.git Control-de-Accesos
+git clone https://github.com/GabChung001/CA-TEST.git Control-de-Accesos
 cd Control-de-Accesos
 ```
-> Reemplaza `TU_PAT` por tu token. Para **actualizarla** después:
-> `cd ~/Control-de-Accesos && bash scripts/deploy.sh`.
+> Para **actualizarla** después: `cd ~/Control-de-Accesos && bash scripts/deploy.sh`.
 
 ## 3. Configurar el `.env` del edge
 `EDGE_SYNC_KEY` y `QR_SIGNING_SECRET` deben ser **los mismos de la nube**; los
@@ -145,16 +144,30 @@ journalctl -u acceso-api -n 20 --no-pager | grep -i sincroniz   # "Sincronizaci�
 Crea una persona/credencial en la **web de la nube**; en ~30 s aparece en la
 controladora (entra a su panel local o valida el QR).
 
-## 7. Lectores y relé (pluma / torniquete)
-- **Lector** (cámara web, lector QR USB, o tótem): apunta al edge por LAN y llama
-  a `POST /api/acceso/validar`. El sistema responde `abrirBarrera: true/false`.
-- **Relé/pinout:**
-  - **Raspberry Pi:** pines **GPIO** → módulo de relé → contacto seco de la pluma/torniquete (lo más directo).
-  - **Mini PC:** módulo de **relé USB** (no tiene GPIO).
-  - Cuando `abrirBarrera=true`, la controladora dispara el pulso al relé. Esa capa
-    de "driver" se conecta cuando tengas el hardware (está prevista en el diseño).
+## 7. Lectores de QR (cámara o pistola) y rol entrada/salida
+El lector llama a `POST /api/acceso/dispositivo/validar` con su **API key** (que define
+su rol). Hay dos tipos, cada uno como un servicio por carril:
+- **Cámara web (tótem):** `acceso-lector@<rol>` (lee con `zbarcam`). Designar:
+  `PW=dev bash scripts/designar-lector.sh entrada /dev/v4l/by-id/usb-...-index0 ENTRADA_VEHICULAR`.
+- **Pistola QR (HID/teclado):** `acceso-scanner@<rol>` (lee con `scripts/lector-hid.py`,
+  requiere `python3-evdev`). Designar:
+  `PW=dev bash scripts/designar-scanner.sh entrada /dev/input/by-id/usb-...-event-kbd ENTRADA_VEHICULAR`.
 
-## 8. Operación
+Detalle de operación y de "ver accesos en vivo": [OPERACION-CASETA.md](OPERACION-CASETA.md).
+
+## 8. Barrera / pluma (Hikvision DS-K2812 por ISAPI)
+El control de la pluma lo hace el **módulo de barrera** de la API (`apps/api/src/barrera`).
+Cuando un acceso se autoriza, abre la barrera y, **si la pluma sigue abierta** de un paso
+previo, espera el cierre y reabre o niega según la política. Backends:
+- `BARRERA_MODO=simulado` → prueba sin hardware (estado en memoria).
+- `BARRERA_MODO=hikvision` → abre un **DS-K2812 por ISAPI** (`HIKVISION_URL/USER/PASS`).
+
+Conexión, pinout del controlador, comandos ISAPI y la lógica de "pluma abierta" están en
+**[DEFINICION-PRUEBAS-HIKVISION.md](DEFINICION-PRUEBAS-HIKVISION.md)**. Variables en
+`apps/api/.env`: `BARRERA_MODO`, `BARRERA_PULSO_SEG`, `BARRERA_ESPERA_CIERRE_MS`,
+`BARRERA_POLITICA_ABIERTA`, `BARRERA_DOOR_ENTRADA/SALIDA`, `HIKVISION_*`.
+
+## 9. Operación
 - Si se cae internet, la controladora **sigue validando** con su copia local;
   los movimientos se **encolan** y suben solos al reconectar.
 - La presencia (anti-passback) y el reset de 24 h **viven en la controladora**.

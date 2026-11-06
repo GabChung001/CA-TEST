@@ -25,7 +25,7 @@ y valida el catálogo de **su** parque. Se designa con la variable `PARQUE_ID` e
 
 | Parque (nombre) | PARQUE_ID | Caseta / ubicación | Hardware (mini PC / Raspberry) | IP en LAN | Estado |
 |---|---|---|---|---|---|
-| _Ej: ElitePark_ | _cmw2…_ | _Entrada principal_ | _Raspberry Pi 5_ | _192.168.1.50_ | _Operativa_ |
+| ElitePark | cmw2kfw3w0008omaovn13u5is | Caseta (pruebas) | Mini PC Ubuntu Server | 192.168.100.63 | Pruebas |
 |  |  |  |  |  |  |
 |  |  |  |  |  |  |
 
@@ -36,4 +36,6 @@ y valida el catálogo de **su** parque. Se designa con la variable `PARQUE_ID` e
       `QR_SIGNING_SECRET` (= nube) y **`PARQUE_ID`** (su parque).
 - [ ] Servicio `acceso-api` activo y sincronizando (logs: "Sincronización edge activa").
 - [ ] Puntos de acceso del parque creados en la nube (bajan por sync).
-- [ ] Lectoras apuntando a la controladora; relé/ESP32 conectado.
+- [ ] Lectores designados (cámara `acceso-lector@` o pistola `acceso-scanner@`).
+- [ ] Barrera configurada (`BARRERA_MODO` simulado o hikvision/ISAPI) — ver
+      [DEFINICION-PRUEBAS-HIKVISION.md](DEFINICION-PRUEBAS-HIKVISION.md).

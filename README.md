@@ -4,8 +4,24 @@ Sistema de control de acceso **vehicular y peatonal por QR** para parques
 industriales. Administración en la **nube** y validación de accesos en un
 **nodo local (edge) en caseta** que opera aun sin internet.
 
-- Arquitectura: [`ARQUITECTURA.md`](./ARQUITECTURA.md)
-- Seguridad (SGSI): [`SEGURIDAD-SGSI.md`](./SEGURIDAD-SGSI.md)
+> **Empieza aquí:** [`GUIA-MAESTRA.md`](./GUIA-MAESTRA.md) — índice de toda la
+> documentación y el estado actual del sistema.
+
+### Documentación
+| Documento | Para qué |
+|---|---|
+| [`GUIA-MAESTRA.md`](./GUIA-MAESTRA.md) | Índice general y estado actual |
+| [`EXPLICACION-GENERAL.md`](./EXPLICACION-GENERAL.md) | Cómo funciona TODO (incluye cómo la cámara/pistola lee el QR) |
+| [`ARQUITECTURA.md`](./ARQUITECTURA.md) | Arquitectura nube + caseta |
+| [`SEGURIDAD-SGSI.md`](./SEGURIDAD-SGSI.md) | Seguridad |
+| [`SETUP-DEV.md`](./SETUP-DEV.md) | Entorno de desarrollo |
+| [`DESPLIEGUE-AWS.md`](./DESPLIEGUE-AWS.md) | Nube (EC2): desplegar, operar, actualizar |
+| [`CONTROLADORA-CASETA.md`](./CONTROLADORA-CASETA.md) | Instalar la controladora (Ubuntu Server) |
+| [`OPERACION-CASETA.md`](./OPERACION-CASETA.md) | Operar la caseta (roles de cámara, en vivo) |
+| [`GUIA-CLIENTE-CASETA.md`](./GUIA-CLIENTE-CASETA.md) | Guía simple para el cliente (corte de luz, etc.) |
+| [`DEFINICION-PRUEBAS-HIKVISION.md`](./DEFINICION-PRUEBAS-HIKVISION.md) | Pistola QR (HID) + Hikvision DS-K2812 (ISAPI) |
+
+Repositorio **público**: `https://github.com/GabChung001/CA-TEST` (se clona sin token).
 
 ## Roles
 
@@ -17,11 +33,13 @@ industriales. Administración en la **nube** y validación de accesos en un
 ## Estructura
 
 ```
-apps/api      API en la nube (NestJS + Prisma + PostgreSQL)
-apps/web      SPA de administración (React + Vite)
-apps/edge     Nodo local de caseta (fase posterior)
+apps/api      API (la MISMA corre en la nube y en la caseta; el rol lo define SYNC_ROLE)
+apps/web      SPA de administración y panel (React + Vite)
 packages/shared   Tipos de dominio, roles, QR, contratos
+scripts/      deploy, lectores (cámara/pistola), barrera, operación de caseta
 ```
+La **caseta/edge** no es un proyecto aparte: es `apps/api` con `SYNC_ROLE=edge`
+(ya desplegado y en operación). Ver [`ARQUITECTURA.md`](./ARQUITECTURA.md).
 
 ## Prerequisitos (equipo de desarrollo)
 
@@ -70,7 +88,8 @@ pnpm --filter @acceso/web dev            # Web  → http://localhost:5173
 
 Entra con el super admin sembrado (`felipe@thinktech.mx`). Desde ahí: crea el
 parque y sus puntos de acceso en **Configuración**, bodegas, personal y sus
-**QR**, y prueba el flujo en el **simulador de lector** del panel.
+**QR**. Los QR se validan en la **controladora de la caseta** (cámara o pistola);
+ver [`CONTROLADORA-CASETA.md`](./CONTROLADORA-CASETA.md) y [`OPERACION-CASETA.md`](./OPERACION-CASETA.md).
 
 ## Generar secretos seguros
 
@@ -83,4 +102,4 @@ Genera uno distinto para `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` y `QR_SIGNING
 
 ---
 
-© ThinkTech / IntegraTECH. Código privado.
+© ThinkTech / IntegraTECH.
