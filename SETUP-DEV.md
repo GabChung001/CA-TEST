@@ -55,12 +55,23 @@ pnpm db:up     # levanta PostgreSQL 16 en localhost:5432
 
 ## Después de instalar
 
+> **Estado actual:** la API (NestJS) y la web (React) **ya están construidas** y en
+> operación. El repo es **público** (`https://github.com/GabChung001/CA-TEST`), se clona
+> sin token. Este equipo Windows es **solo desarrollo**: su `apps/api/.env` quedó en
+> `SYNC_ROLE=cloud` standalone (no sincroniza ni empuja a AWS).
+
 ```powershell
 # En la carpeta del proyecto:
-copy .env.example .env     # editar secretos (ver README)
 pnpm install
+pnpm --filter @acceso/shared build
+pnpm --filter @acceso/api exec prisma migrate dev
+pnpm --filter @acceso/api run db:seed      # super admin inicial
 ```
 
-Cuando el toolchain esté listo, continúo generando la **API (NestJS)** y la
-**web (React)** sobre la base ya definida (`apps/api/prisma/schema.prisma` y
-`packages/shared`).
+Levantar (dos terminales): `pnpm --filter @acceso/api start:dev` (API) y
+`pnpm --filter @acceso/web dev` (web). Puesta en marcha completa en el
+[`README.md`](./README.md); índice general en [`GUIA-MAESTRA.md`](./GUIA-MAESTRA.md).
+
+> Nota: en este equipo el toolchain se instaló con **Scoop** sin cambiar la política de
+> ejecución global (Node 26 / pnpm / PostgreSQL por Scoop). Si un shell nuevo no encuentra
+> `node`/`pnpm`/`psql`, recarga el PATH (ver README).

@@ -32,7 +32,7 @@ industriales. Administración en la **nube** y validación de accesos en un
           ┌───────────────┴───────────────────────────────▼─────────────────────────┐
           │                      CASETA (nodo edge, local)                           │
           │                                                                          │
-          │   apps/edge (NestJS)  ──►  PostgreSQL/SQLite local (réplica)             │
+          │   apps/api (SYNC_ROLE=edge)  ──►  PostgreSQL local (réplica)            │
           │     • Valida QR            • Credenciales autorizadas (respaldo)         │
           │     • Anti-passback        • Estado de presencia ADENTRO/AFUERA          │
           │     • Reset 24h            • Cola de movimientos pendientes de subir     │
@@ -57,8 +57,8 @@ internet, la caseta sigue operando con su réplica; al volver, reconcilia.
 |---|---|---|
 | `apps/web` | Nube | SPA de administración: altas/bajas, personal, QR, reportes, chart de asistencia por bodega. |
 | `apps/api` | Nube | API REST + Auth/RBAC + catálogo (parques, bodegas, personas, credenciales) + generación de QR firmado + reportes. BD primaria. |
-| `apps/edge` | Caseta | Servicio local: valida accesos, anti-passback, reset 24h, control de barreras, panel de vigilancia en vivo, sincronización con la nube. |
-| Tótem / lector | Caseta | Lee el QR (cámara del dispositivo o lector) y llama a `apps/edge`. |
+| `apps/api` (`SYNC_ROLE=edge`) | Caseta | La misma API, en modo edge: valida accesos, anti-passback, reset 24h, control de barrera, panel de vigilancia, sincronización con la nube. |
+| Tótem / lector | Caseta | Lee el QR (cámara `zbarcam` o pistola HID) y llama a la API local. |
 | Controlador de accesos | Caseta | Recibe la orden de "abrir" del edge y acciona pluma/torniquete. |
 | `packages/shared` | — | Tipos de dominio, roles, contrato de validación, formato de QR. |
 
@@ -69,7 +69,7 @@ internet, la caseta sigue operando con su réplica; al volver, reconcilia.
 ### 3.1 Alta / baja (nube → caseta)
 1. Un admin da de alta/baja o bloquea en `apps/web` (nube).
 2. `apps/api` persiste en la BD primaria y marca el cambio en un *feed de cambios* (cursor incremental).
-3. El `apps/edge` recibe el cambio (push si hay internet) o lo toma en su *pull* periódico, y actualiza su réplica local → **este es el "respaldo" que pide la operación**.
+3. La **controladora** (`apps/api` en modo edge) lo toma en su *pull* periódico y actualiza su réplica local → **este es el "respaldo" que pide la operación**.
 4. Si no hay internet, el cambio queda en la nube y el edge lo aplica en cuanto reconecta.
 
 ### 3.2 Validación de acceso (100 % local en caseta)
@@ -164,9 +164,10 @@ control-accesos/
 1. **Base** (este paso): estructura, modelo de datos, tipos, docs.
 2. **API nube:** auth + RBAC + MFA, catálogo (parques/bodegas/personas), credenciales + QR firmado.
 3. **Web:** login, altas/bajas de personal, generación/impresión de QR, chart de asistencia.
-4. **Edge caseta:** validación de acceso, anti-passback, reset 24h, control de barreras, panel en vivo + simulador de lector.
-5. **Sincronización** nube↔edge (catálogo y movimientos) y modo offline.
-6. **Reportes, endurecimiento SGSI y empaquetado** para el servidor de caseta.
+4. **Edge caseta:** validación de acceso, anti-passback, reset 24h, control de barrera, panel en vivo. ✅ hecho
+5. **Sincronización** nube↔edge (catálogo y movimientos) y modo offline. ✅ hecho
+6. **Lectores** (cámara y pistola HID) y **barrera** (simulado / Hikvision ISAPI). ✅ hecho
+7. **Endurecimiento SGSI para producción** (HTTPS, cifrado en reposo, respaldos). ⏳ pendiente
 
 > Hardware real (lector/tótem, controlador, integración con plumas existentes) se
 > confirma en visita técnica; por eso el control de barreras y el lector van tras
