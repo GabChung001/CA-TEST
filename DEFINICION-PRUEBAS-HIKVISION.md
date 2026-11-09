@@ -90,29 +90,49 @@ curl -s --digest -u admin:TU_PASS "http://192.168.100.50/ISAPI/AccessControl/cap
 
 ---
 
-## 3. Pinout / cableado del DS-K2812 (aunque mandemos por ISAPI)
+## 3. Pinout / cableado del DS-K2812 (etiquetas reales del QSG DS-K281X)
 
-Aunque la **orden** de abrir va por red, el DS-K2812 **sigue cableado físicamente** a la
-pluma y a su sensor; de ese sensor sale el "está abierta/cerrada" que leeremos por ISAPI.
-Por cada puerta, el controlador tiene un bloque de terminales con estos grupos:
+El DS-K2812 es de **2 puertas**. Tiene un **bloque de terminales por puerta** (Lock1 =
+Puerta 1, Lock2 = Puerta 2) con **exactamente estas 6 terminales** (así vienen impresas
+en la placa):
 
-| Grupo de terminales | A qué va | Para qué |
+| Terminal | Qué es | Conexión |
 |---|---|---|
-| **Relé de puerta** (`NO` / `COM` / `NC`) | A la entrada de **abrir** de la pluma (contacto seco) | Abrir la barrera |
-| **Sensor de puerta** (`SENSOR`/`DOOR`/`MAG` + `GND`) | Al **sensor de posición de la pluma** (fin de carrera "pluma arriba" o contacto magnético) | Saber si está **abierta/cerrada** |
-| **Botón de salida** (`BTN`/`REX` + `GND`) | Botón físico opcional | Apertura manual local |
-| **Alimentación** (`+12V` / `GND`) | Fuente del equipo | Energía al sensor/cerradura |
+| **COM** | Común del relé de la puerta | Común de la cerradura/pluma |
+| **NO** | Relé **normalmente abierto** | Cerradura **fail-secure** (electroimán de strike, o entrada "abrir" de la pluma) |
+| **NC** | Relé **normalmente cerrado** | Cerradura **fail-safe** (maglock: se suelta al abrir) |
+| **S** | **Sensor de puerta** (Door Contact) | Sensor magnético / "pluma arriba" → estado abierta/cerrada |
+| **B** | **Botón de salida** (Exit Button / REX) | Botón de apertura local |
+| **G** | **GND** (común de `S` y de `B`) | Tierra de sensor y botón |
 
-Para **simular la pluma mañana** sin motor:
-- Puedes puentear/abrir el **contacto del sensor** a mano para que el controlador vea
-  "abierta" o "cerrada" y así probar la lógica de "sigue abierta".
-- El **relé de puerta** lo puedes verificar con un **LED/foco de prueba** o un multímetro
-  en continuidad (ver que conmute al mandar `open`).
+- El relé de cada puerta usa **COM + (NO o NC)**. NO vs NC se elige con un **jumper**
+  (RelayNO/NC) en la placa. Para una **pluma vehicular**, el contacto **NO–COM** va a la
+  entrada "abrir" del tablero de la pluma (contacto seco).
+- **Lectores:** cada puerta admite lector **RS-485** (`485+`, `485-`, `G`, `12V`) o
+  **Wiegand** (`W0`, `W1`, `12V`, `G`, y `OK`/`ERR`/`BEEP`). *En nuestro caso NO usamos
+  lector Hikvision:* el QR lo lee la pistola/cámara del Ubuntu; el DS-K2812 solo abre.
+- **Alimentación:** `DC_IN (+12V)` / `GND` desde la fuente incluida; `12V_OUT` para
+  alimentar cerradura/sensores.
+- **Red:** `Network Interface` (RJ45) a la misma LAN que el Ubuntu.
 
-> ⚠️ El **orden exacto y las etiquetas** de las terminales vienen en el **diagrama del
-> DS-K2812** (su datasheet/manual). Úsalo para el cableado fino; aquí va el mapa funcional.
-> Para una **pluma vehicular** real, el relé va a la entrada de "abrir" del tablero de la
-> pluma, y el sensor a un detector de "pluma arriba".
+> **Activación obligatoria antes de ISAPI:** de fábrica el equipo viene **inactivo**, IP
+> `192.0.0.64`, puerto `8000`, usuario `admin`. Con **SADP** o **iVMS-4200** actívalo
+> (crea contraseña fuerte) y cámbiale la IP a tu subred (p. ej. `192.168.100.50`). Hasta
+> entonces ISAPI no responde.
+
+### Dónde conectar "algo" para pruebas (sin pluma)
+1. **Ver que abre (relé):** multímetro en **continuidad/beep** entre **`COM1` y `NO1`**
+   (Puerta 1). Al mandar el `open` por ISAPI, el relé **cierra** y suena durante el tiempo
+   de apertura. *Variante visual:* un **foco/LED 12V** en serie por `COM1`–`NO1` (con la
+   fuente de 12V) se enciende en cada apertura.
+2. **Simular "pluma abierta/cerrada" (sensor):** un **cable puente o un botón entre `S1` y
+   `G`**. Cerrado = una posición, abierto = la otra → así pruebas la lógica de **"sigue
+   abierta"** (y el estado por ISAPI si el firmware lo reporta).
+3. **Abrir local sin software (botón de salida):** un **botón entre `B1` y `G`** abre la
+   Puerta 1 directo → verifica el cableado del relé/cerradura sin tocar el software.
+
+> ⚠️ Verifica siempre las etiquetas **impresas en TU placa** antes de energizar. Fuente
+> oficial: QSG serie DS-K281X (bloque por puerta: `NC NO S B G COM`).
 
 ---
 
