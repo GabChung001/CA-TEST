@@ -96,7 +96,7 @@ Usamos una **cámara web común** y el software hace la decodificación nosotros
    el patrón del QR y lo **decodifica a texto**: `TTA1.<codigo>.<firma>`. (Esto es "descifrar"
    en el sentido de *decodificar la imagen a su texto*; el QR es un formato de imagen, no un
    cifrado.)
-3. Nuestro script [`lector.sh`](../scripts/lector.sh) toma ese texto y lo **envía a la API
+3. Nuestro script [`lector.sh`](../../scripts/lector.sh) toma ese texto y lo **envía a la API
    local** por HTTP: `POST /acceso/dispositivo/validar` con el texto del QR y la **API key**
    del dispositivo (que identifica qué cámara es y, por lo tanto, su **rol** entrada/salida).
 4. La **API valida la firma HMAC** (esto sí es criptografía): si la firma es correcta y la
@@ -179,9 +179,9 @@ Servicios (arrancan solos al prender la máquina — sobreviven cortes de luz):
 - **Multi-cámara:** una instancia de lector por cámara (`acceso-lector@entrada`,
   `acceso-lector@salida`), cada una ligada a su `/dev/video…` (por ruta **estable** `by-id`,
   que no cambia aunque se reordenen los USB) y a un **punto de acceso** (que define su rol).
-- Guías operativas: [OPERACION-CASETA.md](OPERACION-CASETA.md),
-  [CONTROLADORA-CASETA.md](CONTROLADORA-CASETA.md),
-  [GUIA-CLIENTE-CASETA.md](GUIA-CLIENTE-CASETA.md).
+- Guías operativas: [OPERACION-CASETA.md](../operar/OPERACION-CASETA.md),
+  [CONTROLADORA-CASETA.md](../desplegar/CONTROLADORA-CASETA.md),
+  [GUIA-CLIENTE-CASETA.md](../operar/GUIA-CLIENTE-CASETA.md).
 
 ---
 
@@ -289,8 +289,8 @@ desarrollo**, la reconfiguramos a `SYNC_ROLE=cloud` y listo.
 - Código en GitHub (**repo público**): `GabChung001/CA-TEST`.
 - **Flujo:** programar → `git push` → en el servidor `bash scripts/deploy.sh` (trae cambios,
   compila API+web, publica, reinicia). El `.env` nunca se toca.
-- Guía detallada de la nube: [DESPLIEGUE-AWS.md](DESPLIEGUE-AWS.md).
-- Guía de la caseta: [CONTROLADORA-CASETA.md](CONTROLADORA-CASETA.md).
+- Guía detallada de la nube: [DESPLIEGUE-AWS.md](../desplegar/DESPLIEGUE-AWS.md).
+- Guía de la caseta: [CONTROLADORA-CASETA.md](../desplegar/CONTROLADORA-CASETA.md).
 
 ---
 

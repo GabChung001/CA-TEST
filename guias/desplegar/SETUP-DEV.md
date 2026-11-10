@@ -70,7 +70,7 @@ pnpm --filter @acceso/api run db:seed      # super admin inicial
 
 Levantar (dos terminales): `pnpm --filter @acceso/api start:dev` (API) y
 `pnpm --filter @acceso/web dev` (web). Puesta en marcha completa en el
-[`README.md`](../README.md); índice general en [`GUIA-MAESTRA.md`](./GUIA-MAESTRA.md).
+[`README.md`](../../README.md); índice general en [`GUIA-MAESTRA.md`](../GUIA-MAESTRA.md).
 
 > Nota: en este equipo el toolchain se instaló con **Scoop** sin cambiar la política de
 > ejecución global (Node 26 / pnpm / PostgreSQL por Scoop). Si un shell nuevo no encuentra

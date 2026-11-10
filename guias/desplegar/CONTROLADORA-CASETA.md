@@ -153,7 +153,7 @@ su rol). Hay dos tipos, cada uno como un servicio por carril:
   requiere `python3-evdev`). Designar:
   `PW=dev bash scripts/designar-scanner.sh entrada /dev/input/by-id/usb-...-event-kbd ENTRADA_VEHICULAR`.
 
-Detalle de operación y de "ver accesos en vivo": [OPERACION-CASETA.md](OPERACION-CASETA.md).
+Detalle de operación y de "ver accesos en vivo": [OPERACION-CASETA.md](../operar/OPERACION-CASETA.md).
 
 ## 8. Barrera / pluma (Hikvision DS-K2812 por ISAPI)
 El control de la pluma lo hace el **módulo de barrera** de la API (`apps/api/src/barrera`).
@@ -163,7 +163,7 @@ previo, espera el cierre y reabre o niega según la política. Backends:
 - `BARRERA_MODO=hikvision` → abre un **DS-K2812 por ISAPI** (`HIKVISION_URL/USER/PASS`).
 
 Conexión, pinout del controlador, comandos ISAPI y la lógica de "pluma abierta" están en
-**[DEFINICION-PRUEBAS-HIKVISION.md](DEFINICION-PRUEBAS-HIKVISION.md)**. Variables en
+**[DEFINICION-PRUEBAS-HIKVISION.md](../hardware/DEFINICION-PRUEBAS-HIKVISION.md)**. Variables en
 `apps/api/.env`: `BARRERA_MODO`, `BARRERA_PULSO_SEG`, `BARRERA_ESPERA_CIERRE_MS`,
 `BARRERA_POLITICA_ABIERTA`, `BARRERA_DOOR_ENTRADA/SALIDA`, `HIKVISION_*`.
 

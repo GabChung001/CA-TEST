@@ -28,16 +28,16 @@ Repositorio: **https://github.com/GabChung001/CA-TEST** (público, se clona sin 
 
 | Quiero… | Documento |
 |---|---|
-| Entender **todo** el sistema (incl. cómo se lee/descifra el QR) | [EXPLICACION-GENERAL.md](./EXPLICACION-GENERAL.md) |
-| Ver la **arquitectura** nube + caseta | [ARQUITECTURA.md](./ARQUITECTURA.md) |
-| **Desplegar/operar/actualizar la nube (AWS)** | [DESPLIEGUE-AWS.md](./DESPLIEGUE-AWS.md) |
-| **Instalar una controladora** (Ubuntu Server) | [CONTROLADORA-CASETA.md](./CONTROLADORA-CASETA.md) |
-| **Operar la caseta** (roles de cámara, ver en vivo) | [OPERACION-CASETA.md](./OPERACION-CASETA.md) |
-| Dar al **cliente** una guía simple (corte de luz, etc.) | [GUIA-CLIENTE-CASETA.md](./GUIA-CLIENTE-CASETA.md) |
-| **Registro de controladoras** (una por parque) | [CONTROLADORAS.md](./CONTROLADORAS.md) |
-| **Pistola QR + Hikvision** (pruebas de barrera) | [DEFINICION-PRUEBAS-HIKVISION.md](./DEFINICION-PRUEBAS-HIKVISION.md) |
-| **Seguridad (SGSI)** | [SEGURIDAD-SGSI.md](./SEGURIDAD-SGSI.md) |
-| **Entorno de desarrollo** | [SETUP-DEV.md](./SETUP-DEV.md) |
+| Entender **todo** el sistema (incl. cómo se lee/descifra el QR) | [entender/EXPLICACION-GENERAL.md](./entender/EXPLICACION-GENERAL.md) |
+| Ver la **arquitectura** nube + caseta | [entender/ARQUITECTURA.md](./entender/ARQUITECTURA.md) |
+| **Desplegar/operar/actualizar la nube (AWS)** | [desplegar/DESPLIEGUE-AWS.md](./desplegar/DESPLIEGUE-AWS.md) |
+| **Instalar una controladora** (Ubuntu Server) | [desplegar/CONTROLADORA-CASETA.md](./desplegar/CONTROLADORA-CASETA.md) |
+| **Operar la caseta** (roles de cámara, ver en vivo) | [operar/OPERACION-CASETA.md](./operar/OPERACION-CASETA.md) |
+| Dar al **cliente** una guía simple (corte de luz, etc.) | [operar/GUIA-CLIENTE-CASETA.md](./operar/GUIA-CLIENTE-CASETA.md) |
+| **Registro de controladoras** (una por parque) | [desplegar/CONTROLADORAS.md](./desplegar/CONTROLADORAS.md) |
+| **Pistola QR + Hikvision** (pruebas de barrera) | [hardware/DEFINICION-PRUEBAS-HIKVISION.md](./hardware/DEFINICION-PRUEBAS-HIKVISION.md) |
+| **Seguridad (SGSI)** | [entender/SEGURIDAD-SGSI.md](./entender/SEGURIDAD-SGSI.md) |
+| **Entorno de desarrollo** | [desplegar/SETUP-DEV.md](./desplegar/SETUP-DEV.md) |
 
 ---
 
@@ -71,7 +71,7 @@ PW=dev bash scripts/designar-scanner.sh entrada /dev/input/by-id/usb-...-event-k
 
 **Cambiar la barrera a Hikvision real (cuando se conecte):** en `apps/api/.env` de la
 controladora poner `BARRERA_MODO=hikvision` + `HIKVISION_URL/USER/PASS`, y
-`sudo systemctl restart acceso-api`. Detalle en [DEFINICION-PRUEBAS-HIKVISION.md](./DEFINICION-PRUEBAS-HIKVISION.md).
+`sudo systemctl restart acceso-api`. Detalle en [hardware/DEFINICION-PRUEBAS-HIKVISION.md](./hardware/DEFINICION-PRUEBAS-HIKVISION.md).
 
 ---
 
