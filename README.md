@@ -4,22 +4,23 @@ Sistema de control de acceso **vehicular y peatonal por QR** para parques
 industriales. Administración en la **nube** y validación de accesos en un
 **nodo local (edge) en caseta** que opera aun sin internet.
 
-> **Empieza aquí:** [`GUIA-MAESTRA.md`](./GUIA-MAESTRA.md) — índice de toda la
+> **Empieza aquí:** [`guias/GUIA-MAESTRA.md`](./guias/GUIA-MAESTRA.md) — índice de toda la
 > documentación y el estado actual del sistema.
 
-### Documentación
+### Documentación (carpeta [`guias/`](./guias))
 | Documento | Para qué |
 |---|---|
-| [`GUIA-MAESTRA.md`](./GUIA-MAESTRA.md) | Índice general y estado actual |
-| [`EXPLICACION-GENERAL.md`](./EXPLICACION-GENERAL.md) | Cómo funciona TODO (incluye cómo la cámara/pistola lee el QR) |
-| [`ARQUITECTURA.md`](./ARQUITECTURA.md) | Arquitectura nube + caseta |
-| [`SEGURIDAD-SGSI.md`](./SEGURIDAD-SGSI.md) | Seguridad |
-| [`SETUP-DEV.md`](./SETUP-DEV.md) | Entorno de desarrollo |
-| [`DESPLIEGUE-AWS.md`](./DESPLIEGUE-AWS.md) | Nube (EC2): desplegar, operar, actualizar |
-| [`CONTROLADORA-CASETA.md`](./CONTROLADORA-CASETA.md) | Instalar la controladora (Ubuntu Server) |
-| [`OPERACION-CASETA.md`](./OPERACION-CASETA.md) | Operar la caseta (roles de cámara, en vivo) |
-| [`GUIA-CLIENTE-CASETA.md`](./GUIA-CLIENTE-CASETA.md) | Guía simple para el cliente (corte de luz, etc.) |
-| [`DEFINICION-PRUEBAS-HIKVISION.md`](./DEFINICION-PRUEBAS-HIKVISION.md) | Pistola QR (HID) + Hikvision DS-K2812 (ISAPI) |
+| [`GUIA-MAESTRA.md`](./guias/GUIA-MAESTRA.md) | Índice general y estado actual |
+| [`EXPLICACION-GENERAL.md`](./guias/EXPLICACION-GENERAL.md) | Cómo funciona TODO (incluye cómo la cámara/pistola lee el QR) |
+| [`ARQUITECTURA.md`](./guias/ARQUITECTURA.md) | Arquitectura nube + caseta |
+| [`SEGURIDAD-SGSI.md`](./guias/SEGURIDAD-SGSI.md) | Seguridad |
+| [`SETUP-DEV.md`](./guias/SETUP-DEV.md) | Entorno de desarrollo |
+| [`DESPLIEGUE-AWS.md`](./guias/DESPLIEGUE-AWS.md) | Nube (EC2): desplegar, operar, actualizar |
+| [`CONTROLADORA-CASETA.md`](./guias/CONTROLADORA-CASETA.md) | Instalar la controladora (Ubuntu Server) |
+| [`OPERACION-CASETA.md`](./guias/OPERACION-CASETA.md) | Operar la caseta (roles de cámara, en vivo) |
+| [`GUIA-CLIENTE-CASETA.md`](./guias/GUIA-CLIENTE-CASETA.md) | Guía simple para el cliente (corte de luz, etc.) |
+| [`CONTROLADORAS.md`](./guias/CONTROLADORAS.md) | Registro de controladoras (una por parque) |
+| [`DEFINICION-PRUEBAS-HIKVISION.md`](./guias/DEFINICION-PRUEBAS-HIKVISION.md) | Pistola QR (HID) + Hikvision DS-K2812 (ISAPI) |
 
 Repositorio **público**: `https://github.com/GabChung001/CA-TEST` (se clona sin token).
 
@@ -39,7 +40,7 @@ packages/shared   Tipos de dominio, roles, QR, contratos
 scripts/      deploy, lectores (cámara/pistola), barrera, operación de caseta
 ```
 La **caseta/edge** no es un proyecto aparte: es `apps/api` con `SYNC_ROLE=edge`
-(ya desplegado y en operación). Ver [`ARQUITECTURA.md`](./ARQUITECTURA.md).
+(ya desplegado y en operación). Ver [`ARQUITECTURA.md`](./guias/ARQUITECTURA.md).
 
 ## Prerequisitos (equipo de desarrollo)
 
@@ -52,7 +53,7 @@ Este equipo arranca desde cero. Hace falta instalar:
 | **Git** | reciente | Control de versiones |
 | **Docker Desktop** | reciente | PostgreSQL local (o instalar PostgreSQL 16 nativo) |
 
-Ver la guía de instalación en [`SETUP-DEV.md`](./SETUP-DEV.md).
+Ver la guía de instalación en [`SETUP-DEV.md`](./guias/SETUP-DEV.md).
 
 ## Puesta en marcha del MVP local
 
@@ -89,7 +90,7 @@ pnpm --filter @acceso/web dev            # Web  → http://localhost:5173
 Entra con el super admin sembrado (`felipe@thinktech.mx`). Desde ahí: crea el
 parque y sus puntos de acceso en **Configuración**, bodegas, personal y sus
 **QR**. Los QR se validan en la **controladora de la caseta** (cámara o pistola);
-ver [`CONTROLADORA-CASETA.md`](./CONTROLADORA-CASETA.md) y [`OPERACION-CASETA.md`](./OPERACION-CASETA.md).
+ver [`CONTROLADORA-CASETA.md`](./guias/CONTROLADORA-CASETA.md) y [`OPERACION-CASETA.md`](./guias/OPERACION-CASETA.md).
 
 ## Generar secretos seguros
 

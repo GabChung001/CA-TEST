@@ -96,7 +96,7 @@ Usamos una **cámara web común** y el software hace la decodificación nosotros
    el patrón del QR y lo **decodifica a texto**: `TTA1.<codigo>.<firma>`. (Esto es "descifrar"
    en el sentido de *decodificar la imagen a su texto*; el QR es un formato de imagen, no un
    cifrado.)
-3. Nuestro script [`lector.sh`](scripts/lector.sh) toma ese texto y lo **envía a la API
+3. Nuestro script [`lector.sh`](../scripts/lector.sh) toma ese texto y lo **envía a la API
    local** por HTTP: `POST /acceso/dispositivo/validar` con el texto del QR y la **API key**
    del dispositivo (que identifica qué cámara es y, por lo tanto, su **rol** entrada/salida).
 4. La **API valida la firma HMAC** (esto sí es criptografía): si la firma es correcta y la
