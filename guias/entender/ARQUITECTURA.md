@@ -10,9 +10,9 @@ industriales. Administración en la **nube** y validación de accesos en un
 >   `SYNC_ROLE=edge`. La misma base de código corre en la nube y en la caseta.
 > - El **panel en vivo** se actualiza por **polling cada 3 s** (no WebSocket).
 > - El **control de barrera** es el módulo `apps/api/src/barrera` (backends
->   `simulado` y `hikvision` por ISAPI). Ver [DEFINICION-PRUEBAS-HIKVISION.md](./DEFINICION-PRUEBAS-HIKVISION.md).
+>   `simulado` y `hikvision` por ISAPI). Ver [DEFINICION-PRUEBAS-HIKVISION.md](../hardware/DEFINICION-PRUEBAS-HIKVISION.md).
 > - Lectores: **cámara** (`zbarcam`) o **pistola QR HID**. Repo **público**.
-> - Índice completo y estado: [GUIA-MAESTRA.md](./GUIA-MAESTRA.md).
+> - Índice completo y estado: [GUIA-MAESTRA.md](../GUIA-MAESTRA.md).
 
 ---
 

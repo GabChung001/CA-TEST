@@ -38,4 +38,4 @@ y valida el catálogo de **su** parque. Se designa con la variable `PARQUE_ID` e
 - [ ] Puntos de acceso del parque creados en la nube (bajan por sync).
 - [ ] Lectores designados (cámara `acceso-lector@` o pistola `acceso-scanner@`).
 - [ ] Barrera configurada (`BARRERA_MODO` simulado o hikvision/ISAPI) — ver
-      [DEFINICION-PRUEBAS-HIKVISION.md](DEFINICION-PRUEBAS-HIKVISION.md).
+      [DEFINICION-PRUEBAS-HIKVISION.md](../hardware/DEFINICION-PRUEBAS-HIKVISION.md).

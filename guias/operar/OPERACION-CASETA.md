@@ -1,7 +1,7 @@
 # Operación de la controladora (caseta)
 
 Cómo **activar** el sistema en la controladora y cómo **designar a cada cámara/tótem
-su rol de entrada o salida**. (La instalación está en [CONTROLADORA-CASETA.md](CONTROLADORA-CASETA.md).)
+su rol de entrada o salida**. (La instalación está en [CONTROLADORA-CASETA.md](../desplegar/CONTROLADORA-CASETA.md).)
 
 ## 1. Activar / arrancar
 Los tres servicios **arrancan solos al prender la máquina** (están `enabled`):

@@ -200,7 +200,7 @@ Abre en el navegador: **http://TU-IP-PUBLICA**
 Entra con el super admin sembrado (`felipe@thinktech.mx` / la contraseña del seed).
 Crea parque y puntos de acceso en **Configuración**, bodegas, personal + **QR**.
 Los QR se validan en la **controladora de la caseta** (cámara/tótem); ver
-[CONTROLADORA-CASETA.md](CONTROLADORA-CASETA.md) y [OPERACION-CASETA.md](OPERACION-CASETA.md).
+[CONTROLADORA-CASETA.md](CONTROLADORA-CASETA.md) y [OPERACION-CASETA.md](../operar/OPERACION-CASETA.md).
 
 ---
 
