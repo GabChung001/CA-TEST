@@ -39,3 +39,6 @@ data/
 # Notas locales (pueden contener secretos: tokens, etc.) — NO versionar
 Act_AWS.txt
 *.secrets.txt
+
+# Helper local de actualización (lleva IPs/clave de infra) — NO versionar
+actualizar-servidores.ps1
