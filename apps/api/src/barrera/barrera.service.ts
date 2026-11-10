@@ -115,7 +115,9 @@ export class BarreraService {
         this.logger.error(`[hikvision] No se pudo abrir la puerta ${door}: ${(e as Error).message}`);
       }
     } else {
-      this.logger.log(`[simulado] Puerta ${door} ABIERTA por ${env.BARRERA_PULSO_SEG}s`);
+      // 'simulado' o 'rele': el pulso/estado se lleva por temporizador interno. En
+      // 'rele' la apertura física la dispara ~/abrir-pluma.sh desde el lector.
+      this.logger.log(`[${env.BARRERA_MODO}] Puerta ${door} ABIERTA por ${env.BARRERA_PULSO_SEG}s`);
     }
   }
 
