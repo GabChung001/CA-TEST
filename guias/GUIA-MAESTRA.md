@@ -33,6 +33,7 @@ Repositorio: **https://github.com/GabChung001/CA-TEST** (público, se clona sin 
 | **Desplegar/operar/actualizar la nube (AWS)** | [desplegar/DESPLIEGUE-AWS.md](./desplegar/DESPLIEGUE-AWS.md) |
 | **Instalar una controladora** (Ubuntu Server) | [desplegar/CONTROLADORA-CASETA.md](./desplegar/CONTROLADORA-CASETA.md) |
 | **Operar la caseta** (roles de cámara, ver en vivo) | [operar/OPERACION-CASETA.md](./operar/OPERACION-CASETA.md) |
+| **Comandos manuales** (actualizar Ubuntu/AWS, probar Hikvision) | [operar/COMANDOS-MANUALES.md](./operar/COMANDOS-MANUALES.md) |
 | Dar al **cliente** una guía simple (corte de luz, etc.) | [operar/GUIA-CLIENTE-CASETA.md](./operar/GUIA-CLIENTE-CASETA.md) |
 | **Registro de controladoras** (una por parque) | [desplegar/CONTROLADORAS.md](./desplegar/CONTROLADORAS.md) |
 | **Pistola QR + Hikvision** (pruebas de barrera) | [hardware/DEFINICION-PRUEBAS-HIKVISION.md](./hardware/DEFINICION-PRUEBAS-HIKVISION.md) |
