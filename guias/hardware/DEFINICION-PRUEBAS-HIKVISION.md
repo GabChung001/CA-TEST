@@ -134,6 +134,46 @@ en la placa):
 > ⚠️ Verifica siempre las etiquetas **impresas en TU placa** antes de energizar. Fuente
 > oficial: QSG serie DS-K281X (bloque por puerta: `NC NO S B G COM`).
 
+### Conexión con el Ubuntu y flujo de apertura (relé)
+**Este equipo es SDK-only (sin ISAPI)** — confirmado en iVMS: la sección *Network* solo
+tiene *Advanced Settings* (DNS + plataforma ISUP), no hay servicio HTTP/ISAPI. Por eso el
+Ubuntu **no abre la pluma por red**: le manda la "salida" por un **relé USB** (un pulso
+eléctrico), no por IP.
+
+```
+ [Cámara/Pistola] --USB--> [Ubuntu: valida el QR] --USB--> [Relé USB]
+                                                              │ 2 cables (COM, NO)
+                                                              ▼
+                                            [DS-K2812: Botón de salida  B1 — G]
+                                                              │
+                                                              ▼
+                                                          abre la PLUMA
+```
+
+**Qué pasa al leer un QR (paso a paso):**
+1. La **cámara/pistola** lee el QR → el lector lo manda a la API local del Ubuntu
+   (`POST /api/acceso/dispositivo/validar`).
+2. La API **valida** (firma, vigencia, anti-passback). Si es **AUTORIZADO**, responde
+   `abrirBarrera: true` y el módulo de barrera aplica la lógica de "sigue abierta".
+3. El lector, al ver `abrirBarrera: true`, ejecuta **`~/abrir-pluma.sh`**, que **cierra el
+   relé USB ~1 s**.
+4. Ese relé está cableado al **botón de salida `B1`–`G`** del DS-K2812 → el Hik **abre la
+   pluma** el tiempo que le configuraste en iVMS (Access Control → Door).
+
+**Para dejarlo activo (en el Ubuntu):**
+```bash
+# 1) copia la plantilla del relé y edítala según tu relé USB
+cp scripts/abrir-pluma.example.sh ~/abrir-pluma.sh && chmod +x ~/abrir-pluma.sh
+nano ~/abrir-pluma.sh        # descomenta la opción A (HID) o B (serial) de tu relé
+# 2) pon el modo 'rele' en el .env y reinicia
+sed -i -E 's|^BARRERA_MODO=.*|BARRERA_MODO=rele|' apps/api/.env
+sudo systemctl restart acceso-api
+```
+> Sin el relé todavía puedes probar TODO el flujo: en modo `simulado`/`rele` el lector ya
+> imprime `>>> PLUMA/BARRERA ABIERTA` al autorizar (ahí es donde dispararía el relé).
+> **Hardware sugerido:** un **relé USB de 1 canal** (HID tipo *dcttech*, que se maneja con
+> `usbrelay`, es el más fácil en Linux).
+
 ---
 
 ## 4. Lógica en código: "si la pluma sigue abierta…"
