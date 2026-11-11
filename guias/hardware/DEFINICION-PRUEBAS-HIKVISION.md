@@ -1,9 +1,41 @@
-# Definición de pruebas — Pistola QR (HID) + Hikvision DS-K2812 (ISAPI)
+# Pistola QR (HID) + Hikvision DS-K2812 (apertura por SDK de red)
 
-Cómo dejaremos la **controladora Ubuntu** para las pruebas de entorno: leer el QR con
-una **pistola de código (tipo teclado/HID)** y abrir/controlar la **pluma** a través del
-**Hikvision DS-K2812 por red (ISAPI)**, incluyendo la validación de "**la pluma sigue
-abierta**". Documento de preparación; la parte de código se implementa aparte.
+Cómo queda la **controladora Ubuntu**: lee el QR (cámara o pistola) y **abre la pluma a
+través del Hikvision DS-K2812 por red**, sin hardware extra.
+
+> **IMPORTANTE — método que SÍ usamos (noviembre 2026).** El DS-K2812 (firmware V1.0.2)
+> **NO expone ISAPI** (puerto 80 cerrado; solo responde el **SDK en el 8000**, el que usa
+> iVMS). Por eso la apertura se hace con el **SDK de red de Hikvision** (`BARRERA_MODO=hik-sdk`
+> + `scripts/abrir-hik.py`). Las secciones de ISAPI (§2–§3) quedan como referencia histórica.
+> **Flujo real:** cámara/pistola → Ubuntu valida el QR → `abrir-hik.py` se loguea al Hik por
+> el 8000 → abre la puerta (entrada=1, salida=2). Cero relé, cero ISAPI.
+
+## SDK — instalación en una controladora nueva (una sola vez)
+```bash
+# 1) Librerías del SDK Linux64 de Hikvision (incluye libhcnetsdk.so y componentes)
+mkdir -p ~/hik-sdk && cd ~/hik-sdk
+git clone --depth 1 https://github.com/byte-voyager/HCNetPythonSDK-Linux.git repo
+#   -> quedan en ~/hik-sdk/repo/hklib  (es la ruta por defecto HIK_LIBDIR)
+
+# 2) Configurar la controladora: en ~/Control-de-Accesos/apps/api/.env
+#    BARRERA_MODO=hik-sdk
+#    HIK_HOST=192.168.100.64   HIK_PORT=8000
+#    HIK_USER=admin            HIK_PASS=la_clave_del_hik
+#    HIK_DOOR_ENTRADA=1        HIK_DOOR_SALIDA=2
+sudo systemctl restart acceso-api
+```
+Probar la conexión (sin abrir) y la apertura real:
+```bash
+cd ~/hik-sdk && HIK_PASS='la_clave' python3 ~/Control-de-Accesos/scripts/abrir-hik.py test
+cd ~/hik-sdk && HIK_PASS='la_clave' python3 ~/Control-de-Accesos/scripts/abrir-hik.py entrada
+```
+Ver la apertura automática al escanear un QR:
+```bash
+sudo journalctl -u acceso-api -f | grep -i hik-sdk     # -> "[hik-sdk] entrada: ABIERTA puerta 1"
+```
+> Requisitos: `python3` (viene en Ubuntu), que la controladora alcance al Hik en el 8000, y
+> que el Hik esté **activado** y con su IP fija (se hace en iVMS-4200). El `.env` con la clave
+> es local (gitignored); nunca va al repo.
 
 ---
 
@@ -52,8 +84,8 @@ por modelo, no cambia de puerto). Un servicio lector:
 
 ### 2.1 Red
 - Conecta el **DS-K2812 por Ethernet** a la **misma red** que el Ubuntu.
-- Dale **IP fija** al DS-K2812 (o reserva por DHCP). Ej.: `192.168.100.50`.
-- Verifica que el Ubuntu lo alcanza: `ping 192.168.100.50`.
+- Dale **IP fija** al DS-K2812 (o reserva por DHCP). Ej.: `192.168.100.64`.
+- Verifica que el Ubuntu lo alcanza: `ping 192.168.100.64`.
 
 ### 2.2 Habilitar ISAPI / usuario
 - En la web del equipo o en **iVMS-4200**, asegúrate de tener un **usuario** (operador/
@@ -63,13 +95,13 @@ por modelo, no cambia de puerto). Un servicio lector:
 ### 2.3 Probar ISAPI desde el Ubuntu
 ```bash
 # Info del equipo (confirma usuario/clave y que responde ISAPI)
-curl -s --digest -u admin:TU_PASS http://192.168.100.50/ISAPI/System/deviceInfo
+curl -s --digest -u admin:TU_PASS http://192.168.100.64/ISAPI/System/deviceInfo
 ```
 
 ### 2.4 Abrir una puerta (comando confirmado)
 ```bash
 curl -s --digest -u admin:TU_PASS -X PUT \
-  http://192.168.100.50/ISAPI/AccessControl/RemoteControl/door/1 \
+  http://192.168.100.64/ISAPI/AccessControl/RemoteControl/door/1 \
   -H "Content-Type: application/xml" \
   --data '<RemoteControlDoor><cmd>open</cmd></RemoteControlDoor>'
 ```
@@ -79,9 +111,9 @@ curl -s --digest -u admin:TU_PASS -X PUT \
 ### 2.5 Estado de la puerta ("¿sigue abierta?")
 El endpoint de **estado** varía según firmware; hay que confirmarlo en TU equipo. Candidatos:
 ```bash
-curl -s --digest -u admin:TU_PASS "http://192.168.100.50/ISAPI/AccessControl/Door/status?format=json"
+curl -s --digest -u admin:TU_PASS "http://192.168.100.64/ISAPI/AccessControl/Door/status?format=json"
 # o la capacidad, para ver qué expone:
-curl -s --digest -u admin:TU_PASS "http://192.168.100.50/ISAPI/AccessControl/capabilities"
+curl -s --digest -u admin:TU_PASS "http://192.168.100.64/ISAPI/AccessControl/capabilities"
 ```
 > El estado real de "pluma abierta/cerrada" lo da el **sensor magnético** cableado al
 > DS-K2812 (ver §3). Si el firmware no expone un estado simple, usamos el **stream de
@@ -117,7 +149,7 @@ en la placa):
 
 > **Activación obligatoria antes de ISAPI:** de fábrica el equipo viene **inactivo**, IP
 > `192.0.0.64`, puerto `8000`, usuario `admin`. Con **SADP** o **iVMS-4200** actívalo
-> (crea contraseña fuerte) y cámbiale la IP a tu subred (p. ej. `192.168.100.50`). Hasta
+> (crea contraseña fuerte) y cámbiale la IP a tu subred (p. ej. `192.168.100.64`). Hasta
 > entonces ISAPI no responde.
 
 ### Dónde conectar "algo" para pruebas (sin pluma)
