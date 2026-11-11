@@ -33,7 +33,10 @@ const schema = z.object({
   // 'hikvision' = se controla un DS-K28xx por ISAPI.
   // 'rele' = la apertura física la hace ~/abrir-pluma.sh del lector (relé USB al
   // botón de salida del Hik); la lógica de "sigue abierta" usa el temporizador interno.
-  BARRERA_MODO: z.enum(['ninguno', 'simulado', 'hikvision', 'rele']).default('ninguno'),
+  // 'hik-sdk' = abre el DS-K28xx por el SDK de red (puerto 8000) con scripts/abrir-hik.py.
+  BARRERA_MODO: z
+    .enum(['ninguno', 'simulado', 'hikvision', 'rele', 'hik-sdk'])
+    .default('ninguno'),
   BARRERA_PULSO_SEG: z.coerce.number().int().positive().default(5),
   BARRERA_ESPERA_CIERRE_MS: z.coerce.number().int().positive().default(6000),
   BARRERA_POLITICA_ABIERTA: z.enum(['reabrir', 'negar']).default('reabrir'),

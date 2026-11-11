@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { resolve } from 'node:path';
 import { loadEnv } from '../config/env';
+
+const execFileP = promisify(execFile);
 
 type EstadoPuerta = 'ABIERTA' | 'CERRADA' | 'DESCONOCIDA';
 
@@ -34,12 +39,16 @@ export class BarreraService {
   /** Resuelve el número de puerta del controlador según el tipo de punto. */
   private doorId(p: PuntoBarrera): string {
     const env = loadEnv();
+    // En hik-sdk pasamos el ROL; abrir-hik.py lo traduce a la puerta (HIK_DOOR_*).
+    if (env.BARRERA_MODO === 'hik-sdk') {
+      return p.tipo.startsWith('ENTRADA') ? 'entrada' : 'salida';
+    }
     if (env.BARRERA_MODO === 'hikvision') {
       return p.tipo.startsWith('ENTRADA')
         ? env.BARRERA_DOOR_ENTRADA
         : env.BARRERA_DOOR_SALIDA;
     }
-    // En simulado, cada punto es su propia "puerta".
+    // En simulado/rele, cada punto es su propia "puerta".
     return p.id;
   }
 
@@ -114,10 +123,34 @@ export class BarreraService {
       } catch (e) {
         this.logger.error(`[hikvision] No se pudo abrir la puerta ${door}: ${(e as Error).message}`);
       }
+    } else if (env.BARRERA_MODO === 'hik-sdk') {
+      await this.abrirHikSdk(door); // 'door' aquí es el rol (entrada/salida)
     } else {
       // 'simulado' o 'rele': el pulso/estado se lleva por temporizador interno. En
       // 'rele' la apertura física la dispara ~/abrir-pluma.sh desde el lector.
       this.logger.log(`[${env.BARRERA_MODO}] Puerta ${door} ABIERTA por ${env.BARRERA_PULSO_SEG}s`);
+    }
+  }
+
+  // ─────────────────── Hikvision por SDK de red (puerto 8000) ───────────────────
+
+  /** Abre la puerta ejecutando scripts/abrir-hik.py (SDK Hikvision), pasando el rol. */
+  private async abrirHikSdk(rol: string): Promise<void> {
+    const script =
+      process.env.HIK_SDK_SCRIPT ||
+      resolve(process.cwd(), '../../scripts/abrir-hik.py');
+    try {
+      const { stdout } = await execFileP('python3', [script, rol], {
+        timeout: 8000,
+        env: process.env,
+      });
+      const linea = (stdout || '').trim().split('\n').pop() ?? '';
+      this.logger.log(`[hik-sdk] ${rol}: ${linea}`);
+    } catch (e) {
+      const err = e as Error & { stdout?: string };
+      this.logger.error(
+        `[hik-sdk] no abrió ${rol}: ${err.message}${err.stdout ? ' | ' + err.stdout.trim() : ''}`,
+      );
     }
   }
 
